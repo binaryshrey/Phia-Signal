@@ -385,6 +385,9 @@ function DraggableAgentCard({
   const dragging = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // Don't start drag if clicking a button or interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("[data-no-drag]")) return;
     e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragging.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
@@ -654,6 +657,216 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
     }
   }, [sizingActive, stopSizingAgent, startSizingAgent]);
 
+  // ── Style Agent voice ──────────────────────────────────────────────────────
+  const [styleActive, setStyleActive] = useState(false);
+  const [styleStatus, setStyleStatus] = useState("");
+  const styleWsRef = useRef<WebSocket | null>(null);
+  const styleAudioCtxRef = useRef<AudioContext | null>(null);
+  const styleNextPlayRef = useRef(0);
+  const styleSampleRateRef = useRef(16000);
+  const styleTranscriptRef = useRef<string[]>([]);
+  const styleMicStreamRef = useRef<MediaStream | null>(null);
+  const styleProcessorRef = useRef<ScriptProcessorNode | null>(null);
+
+  const playStyleChunk = useCallback((base64: string) => {
+    const ctx = styleAudioCtxRef.current;
+    if (!ctx || ctx.state !== "running") return;
+    const raw = atob(base64);
+    const pcm16 = new Int16Array(raw.length / 2);
+    for (let i = 0; i < pcm16.length; i++) pcm16[i] = raw.charCodeAt(i * 2) | (raw.charCodeAt(i * 2 + 1) << 8);
+    const float32 = new Float32Array(pcm16.length);
+    for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768;
+    const buffer = ctx.createBuffer(1, float32.length, styleSampleRateRef.current);
+    buffer.copyToChannel(float32, 0);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    const t = Math.max(ctx.currentTime, styleNextPlayRef.current);
+    source.start(t);
+    styleNextPlayRef.current = t + buffer.duration;
+  }, []);
+
+  const analyzeStyleTranscript = useCallback(() => {
+    const transcript = styleTranscriptRef.current.join(" ").toLowerCase();
+    console.log("[Style] Analyzing transcript:", transcript);
+
+    const updates: Partial<typeof prefs> = {};
+
+    // Style vibes detection
+    const vibeMap: Record<string, string> = {
+      "minimal": "minimal", "minimalist": "minimal",
+      "classic": "classic", "timeless": "classic",
+      "casual": "casual", "relaxed": "casual",
+      "streetwear": "streetwear", "street": "streetwear", "urban": "streetwear",
+      "bohemian": "bohemian", "boho": "bohemian",
+      "preppy": "preppy", "prep": "preppy",
+      "edgy": "edgy", "punk": "edgy", "grunge": "edgy",
+      "romantic": "romantic", "feminine": "romantic",
+      "athleisure": "athleisure", "athletic": "athleisure", "sporty": "athleisure",
+      "business": "business", "formal": "business", "professional": "business",
+    };
+    const detectedVibes = new Set(prefs.styleVibes);
+    const removeVibes = new Set<string>();
+
+    for (const [word, vibe] of Object.entries(vibeMap)) {
+      if (new RegExp(`(?:add|like|love|into|prefer|want)\\s+(?:\\w+\\s+)*${word}`, "i").test(transcript) ||
+          new RegExp(`\\b${word}\\s+(?:style|vibe|look)`, "i").test(transcript) ||
+          new RegExp(`more\\s+${word}`, "i").test(transcript)) {
+        detectedVibes.add(vibe);
+      }
+      if (new RegExp(`(?:remove|drop|no more|not|don't like|hate|less)\\s+(?:\\w+\\s+)*${word}`, "i").test(transcript) ||
+          new RegExp(`no\\s+${word}`, "i").test(transcript)) {
+        removeVibes.add(vibe);
+      }
+    }
+    for (const v of removeVibes) detectedVibes.delete(v);
+    if ([...detectedVibes].sort().join() !== [...prefs.styleVibes].sort().join()) {
+      updates.styleVibes = [...detectedVibes];
+    }
+
+    // Favorite colors detection
+    const colorNames = ["black", "white", "cream", "beige", "brown", "navy", "camel", "olive", "burgundy", "blush", "slate", "sage", "rust", "cobalt", "emerald", "gold"];
+    const detectedColors = new Set(prefs.favoriteColors);
+    const removeColors = new Set<string>();
+
+    for (const color of colorNames) {
+      if (new RegExp(`(?:add|like|love|into|prefer|want|more)\\s+(?:\\w+\\s+)*${color}`, "i").test(transcript) ||
+          new RegExp(`\\b${color}\\b`, "i").test(transcript)) {
+        detectedColors.add(color);
+      }
+      if (new RegExp(`(?:remove|drop|no more|not|don't like|hate|less|no)\\s+(?:\\w+\\s+)*${color}`, "i").test(transcript)) {
+        removeColors.add(color);
+      }
+    }
+    for (const c of removeColors) detectedColors.delete(c);
+    if ([...detectedColors].sort().join() !== [...prefs.favoriteColors].sort().join()) {
+      updates.favoriteColors = [...detectedColors];
+    }
+
+    console.log("[Style] Detected updates:", updates);
+    if (Object.keys(updates).length > 0) {
+      savePreferences(updates);
+    }
+  }, [prefs, savePreferences]);
+
+  const stopStyleAgent = useCallback(() => {
+    analyzeStyleTranscript();
+    styleWsRef.current?.close();
+    styleWsRef.current = null;
+    styleMicStreamRef.current?.getTracks().forEach((t) => t.stop());
+    styleMicStreamRef.current = null;
+    styleProcessorRef.current?.disconnect();
+    styleProcessorRef.current = null;
+    styleAudioCtxRef.current?.close();
+    styleAudioCtxRef.current = null;
+    setStyleActive(false);
+    setStyleStatus("");
+  }, [analyzeStyleTranscript]);
+
+  const startStyleAgent = useCallback(async () => {
+    const agentId = "agent_3501kpk3a90yem2a5197xzn74fa9";
+    setStyleActive(true);
+    setStyleStatus("Connecting...");
+    styleTranscriptRef.current = [];
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      styleMicStreamRef.current = stream;
+
+      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      await audioCtx.resume();
+      styleAudioCtxRef.current = audioCtx;
+      styleNextPlayRef.current = audioCtx.currentTime;
+
+      const micSource = audioCtx.createMediaStreamSource(stream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      styleProcessorRef.current = processor;
+
+      const ws = new WebSocket(`wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`);
+      styleWsRef.current = ws;
+
+      let initialized = false;
+
+      processor.onaudioprocess = (e) => {
+        if (!initialized || ws.readyState !== WebSocket.OPEN) return;
+        const input = e.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(input.length);
+        for (let i = 0; i < input.length; i++) pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[i] * 32768)));
+        const bytes = new Uint8Array(pcm16.buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        ws.send(JSON.stringify({ user_audio_chunk: btoa(binary) }));
+      };
+
+      micSource.connect(processor);
+      processor.connect(audioCtx.destination);
+
+      ws.onopen = () => {
+        setStyleStatus("Listening...");
+        // Send context about current styles
+        const currentVibes = prefs.styleVibes.join(", ") || "none set";
+        const currentColors = prefs.favoriteColors.join(", ") || "none set";
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: "user_message",
+              text: `The user's current style preferences are: Style vibes: ${currentVibes}. Favorite colors: ${currentColors}. Help them update their style preferences. Ask what styles they want to add or remove.`,
+            }));
+          }
+        }, 1500);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          switch (msg.type) {
+            case "conversation_initiation_metadata": {
+              initialized = true;
+              const fmt = String(msg.conversation_initiation_metadata_event?.agent_output_audio_format ?? "");
+              const m = fmt.match(/pcm_(\d+)/i);
+              if (m?.[1]) styleSampleRateRef.current = Number(m[1]);
+              setStyleStatus("Tell me your style...");
+              break;
+            }
+            case "audio":
+              if (msg.audio_event?.audio_base_64) {
+                setStyleStatus("Agent speaking...");
+                playStyleChunk(msg.audio_event.audio_base_64);
+              }
+              break;
+            case "user_transcript":
+              if (msg.user_transcription_event?.user_transcript) {
+                styleTranscriptRef.current.push(msg.user_transcription_event.user_transcript);
+                setStyleStatus(`You: "${msg.user_transcription_event.user_transcript}"`);
+              }
+              break;
+            case "agent_response":
+              if (msg.agent_response_event?.agent_response) {
+                styleTranscriptRef.current.push(msg.agent_response_event.agent_response);
+                setStyleStatus("Agent speaking...");
+              }
+              break;
+            case "ping":
+              ws.send(JSON.stringify({ type: "pong", event_id: msg.ping_event?.event_id }));
+              break;
+          }
+        } catch { /* skip */ }
+      };
+
+      ws.onclose = () => { if (styleActive) stopStyleAgent(); };
+      ws.onerror = () => stopStyleAgent();
+    } catch (err) {
+      console.error("Style agent error:", err);
+      setStyleActive(false);
+      setStyleStatus("");
+    }
+  }, [playStyleChunk, prefs, styleActive, stopStyleAgent]);
+
+  const toggleStyleAgent = useCallback(() => {
+    if (styleActive) stopStyleAgent();
+    else startStyleAgent();
+  }, [styleActive, stopStyleAgent, startStyleAgent]);
+
   const svgW = 900;
   const svgH = 700;
   const svgLeft = -300;
@@ -718,8 +931,26 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
       </div>
 
       <DraggableAgentCard defaultX={AGENT_DEFS[0].x} defaultY={AGENT_DEFS[0].y}>
-        <div className="relative w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-          <img src="/Rectangle.svg" alt="" className="absolute top-2 right-2 h-[2.2em] pointer-events-none" />
+        <div className={cn(
+          "relative w-[200px] rounded-2xl border bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]",
+          styleActive ? "border-[#C9A84C]/40" : "border-white/10",
+        )}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleStyleAgent(); }}
+            className="absolute top-2 right-2 z-10 cursor-pointer"
+          >
+            {styleActive ? (
+              <div className="flex size-[2.2em] items-center justify-center rounded-lg bg-[#C9A84C]/30">
+                <svg viewBox="0 0 24 24" className="size-4 text-[#C9A84C]" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              </div>
+            ) : (
+              <img src="/Rectangle.svg" alt="Start style agent" className="h-[2.2em]" />
+            )}
+          </button>
           <div className="flex items-center gap-2 mb-2.5">
             <div className="flex size-6 items-center justify-center rounded-lg bg-[#8B6914]/20">
               <RiSparklingLine className="size-3.5 text-[#C9A84C]" />
@@ -728,12 +959,20 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-[9px]">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-white/40">Analyzing preferences</span>
+              <span className={cn("size-1.5 rounded-full", styleActive ? "bg-[#C9A84C] animate-pulse" : "bg-emerald-400 animate-pulse")} />
+              <span className="text-white/40 truncate max-w-[150px]">
+                {styleActive ? styleStatus || "Connecting..." : "Analyzing preferences"}
+              </span>
             </div>
             <div className="flex flex-wrap gap-1">
-              <span className="rounded-full bg-[#8B6914]/15 px-2 py-0.5 text-[8px] font-medium text-[#C9A84C]">Minimal</span>
-              <span className="rounded-full bg-[#8B6914]/15 px-2 py-0.5 text-[8px] font-medium text-[#C9A84C]">Classic</span>
+              {prefs.styleVibes.length > 0 ? prefs.styleVibes.slice(0, 3).map((v) => (
+                <span key={v} className="rounded-full bg-[#8B6914]/15 px-2 py-0.5 text-[8px] font-medium text-[#C9A84C] capitalize">{v}</span>
+              )) : (
+                <>
+                  <span className="rounded-full bg-[#8B6914]/15 px-2 py-0.5 text-[8px] font-medium text-[#C9A84C]">Minimal</span>
+                  <span className="rounded-full bg-[#8B6914]/15 px-2 py-0.5 text-[8px] font-medium text-[#C9A84C]">Classic</span>
+                </>
+              )}
             </div>
           </div>
         </div>
