@@ -467,31 +467,74 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
 
   const analyzeSizingTranscript = useCallback(() => {
     const transcript = sizingTranscriptRef.current.join(" ").toLowerCase();
-    const clothingSizes = ["xxxl", "xxl", "xl", "l", "m", "s", "xs"];
-    const pantSizes = ["40", "38", "36", "34", "32", "30", "28", "26"];
-    const shoeSizes = ["13", "12", "11", "10.5", "10", "9.5", "9", "8.5", "8", "7.5", "7", "6"];
+    console.log("[Sizing] Analyzing transcript:", transcript);
 
     const updates: Partial<typeof prefs> = {};
-    for (const s of clothingSizes) {
-      if (transcript.includes(`size ${s}`) || transcript.includes(`clothing ${s}`) || transcript.includes(`dress ${s}`) || new RegExp(`\\b${s}\\b`).test(transcript)) {
-        updates.clothingSize = s.toUpperCase();
-        break;
+
+    // Clothing sizes — search the LAST mentioned size (most recent intent wins)
+    const clothingMap: [RegExp, string][] = [
+      [/\bextra\s*extra\s*extra\s*large\b|triple\s*x\s*l\b|\bxxxl\b/, "XXXL"],
+      [/\bextra\s*extra\s*large\b|double\s*x\s*l\b|\bxxl\b|\b2xl\b/, "XXL"],
+      [/\bextra\s*large\b|\bx\s*l\b|\bxl\b/, "XL"],
+      [/\blarge\b|\bsize\s+l\b|\bto\s+l\b|\bit\s+l\b/, "L"],
+      [/\bmedium\b|\bsize\s+m\b|\bto\s+m\b|\bit\s+m\b/, "M"],
+      [/\bextra\s*small\b|\bx\s*s\b|\bxs\b/, "XS"],
+      [/(?<!\w)small\b|\bsize\s+s\b|\bto\s+s\b|\bit\s+s\b/, "S"],
+    ];
+
+    // Find all matches with their position, pick the last one
+    let lastClothingMatch: { pos: number; size: string } | null = null;
+    for (const [pattern, size] of clothingMap) {
+      const matches = [...transcript.matchAll(new RegExp(pattern.source, "gi"))];
+      for (const m of matches) {
+        const pos = m.index ?? 0;
+        if (!lastClothingMatch || pos > lastClothingMatch.pos) {
+          lastClothingMatch = { pos, size };
+        }
       }
     }
+    if (lastClothingMatch) {
+      updates.clothingSize = lastClothingMatch.size;
+    }
+
+    // Pant/waist sizes — match "32", "size 32", "waist 32", "pant size 32", "change to 30", "thirty two"
+    const numberWords: Record<string, string> = {
+      "twenty six": "26", "twenty eight": "28", "thirty": "30", "thirty two": "32",
+      "thirty four": "34", "thirty six": "36", "thirty eight": "38", "forty": "40",
+    };
+    // Replace number words
+    let transcriptNorm = transcript;
+    for (const [word, num] of Object.entries(numberWords)) {
+      transcriptNorm = transcriptNorm.replace(new RegExp(word, "g"), num);
+    }
+
+    const pantSizes = ["40", "38", "36", "34", "32", "30", "28", "26"];
     for (const s of pantSizes) {
-      if (transcript.includes(`pant ${s}`) || transcript.includes(`waist ${s}`) || transcript.includes(`${s} inch`) || transcript.includes(`${s}"`)) {
+      // Match: "32", "size 32", "waist 32", "pant 32", "change to 32", "update to 32", "make it 32"
+      if (new RegExp(`(?:size|waist|pant|change\\s+(?:it\\s+)?to|update\\s+(?:it\\s+)?to|make\\s+it)\\s+${s}\\b`).test(transcriptNorm) ||
+          new RegExp(`\\b${s}\\s*(?:inch|waist|pant)`, "i").test(transcriptNorm) ||
+          // Simple mention of the number in sizing context
+          new RegExp(`\\b${s}\\b`).test(transcriptNorm)) {
         updates.pantSize = s;
         break;
       }
     }
+
+    // Shoe sizes
+    const shoeSizes = ["13", "12", "11", "10.5", "10", "9.5", "9", "8.5", "8", "7.5", "7", "6"];
     for (const s of shoeSizes) {
-      if (transcript.includes(`shoe ${s}`) || transcript.includes(`shoe size ${s}`) || transcript.includes(`us ${s}`)) {
+      if (new RegExp(`shoe\\s*(?:size)?\\s*${s.replace(".", "\\.")}\\b`).test(transcriptNorm) ||
+          new RegExp(`\\bus\\s*${s.replace(".", "\\.")}\\b`).test(transcriptNorm) ||
+          new RegExp(`(?:size|change\\s+(?:it\\s+)?to|update\\s+(?:it\\s+)?to)\\s*${s.replace(".", "\\.")}\\b`).test(transcriptNorm)) {
         updates.shoeSize = s;
         break;
       }
     }
+
+    console.log("[Sizing] Detected updates:", updates);
     if (Object.keys(updates).length > 0) {
       savePreferences(updates);
+      console.log("[Sizing] Preferences updated:", updates);
     }
   }, [prefs, savePreferences]);
 
@@ -581,6 +624,7 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
               break;
             case "agent_response":
               if (msg.agent_response_event?.agent_response) {
+                sizingTranscriptRef.current.push(msg.agent_response_event.agent_response);
                 setSizingStatus("Agent speaking...");
               }
               break;
@@ -1386,7 +1430,7 @@ function ExplorePreviewScreen({
 }) {
   type PreviewBottomNav = "home" | "search" | "cart" | "saved" | "profile";
   type SavedMode = "Wishlists" | "Items" | "Brands";
-  type CartMode = "Bag" | "Reviews";
+  type CartMode = "Bag" | "Socials";
   const tabItems = activeTab === "Explore" ? items : [];
   const trendCarouselRef = useRef<HTMLDivElement | null>(null);
   const [activeTrendSlide, setActiveTrendSlide] = useState(0);
@@ -1708,7 +1752,7 @@ function ExplorePreviewScreen({
             )}
 
             <div className="mt-2.5 rounded-full bg-[#E7E7E7] p-0.5">
-              {(["Bag", "Reviews"] as CartMode[]).map((mode) => (
+              {(["Bag", "Socials"] as CartMode[]).map((mode) => (
                 <button
                   key={mode}
                   type="button"
