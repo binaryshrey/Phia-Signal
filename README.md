@@ -2,7 +2,7 @@
 
 > _Philosophy of discovering your signature style as insignia._
 
-![Phia Signal Banner](<!-- PLACEHOLDER: Add banner image -->)
+![Phia Signal Banner](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/banner.png)
 
 ## Overview
 
@@ -12,7 +12,6 @@ At its core, Phia Signal deploys an **Agent Orchestrator** — a system of speci
 
 Built with Next.js 16, React 19, and powered by Anthropic Claude, Google Vertex AI, ElevenLabs Conversational AI, and MediaPipe — Phia Signal combines computer vision, voice AI, virtual try-on, and social commerce into a unified fashion experience.
 
-![App Overview](<!-- PLACEHOLDER: Add app overview screenshot -->)
 
 ---
 
@@ -38,8 +37,6 @@ Built with Next.js 16, React 19, and powered by Anthropic Claude, Google Vertex 
 ### 1. Landing Page
 
 The landing page features a dark, editorial aesthetic with the tagline rendered in Bodoni Moda serif. Four fashion images are positioned at the corners and converge toward the center on scroll using GSAP ScrollTrigger with scrub-linked animations. An animated shiny text badge introduces "Phia Signal" with a gold shimmer gradient.
-
-![Landing Page](<!-- PLACEHOLDER: Add landing page screenshot -->)
 
 ---
 
@@ -67,7 +64,7 @@ When users arrive at `/onboarding`, an **ElevenLabs voice agent** welcomes them 
 
 All three AI analysis calls (skin tone, body size, outfit style) run **in parallel** when transitioning from Upload to Preferences.
 
-![Onboarding](<!-- PLACEHOLDER: Add onboarding screenshot -->)
+![Onboarding](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/onboard.png)
 
 ---
 
@@ -97,7 +94,7 @@ When the app launches at `/phia`, the **Phia Signal Agent Orchestrator** powers 
 
 **Feedback Agent** appears on the right side when the shopping cart is shared, with reverse-flowing particles indicating feedback collection from friends.
 
-![Agent Orchestrator](<!-- PLACEHOLDER: Add agent orchestrator screenshot -->)
+![Agent Orchestrator](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/home.png)
 
 ---
 
@@ -123,7 +120,7 @@ The phone preview displays a fully interactive mobile shopping experience with t
 - Trending collections carousel with editorial imagery
 - "Trending with Phia" horizontal product cards with view counts
 
-![Personalized Feed](<!-- PLACEHOLDER: Add feed screenshot -->)
+![Personalized Feed](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/discovery.png)
 
 ---
 
@@ -145,7 +142,7 @@ Tapping any product opens a full-screen detail overlay within the phone:
 - **Visit Store** link to external retailer
 - **Enlarge** — tap any carousel image for full-screen dark overlay view
 
-![Product Detail](<!-- PLACEHOLDER: Add product detail screenshot -->)
+![Product Detail](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/try-on.png)
 
 ---
 
@@ -176,7 +173,7 @@ The cart has two tabs accessed via the bottom navigation's shopping bag icon:
 - Copy Link generates `phia-signal.vercel.app/cart/{uid}` and publishes cart to shared Zustand store
 - Triggers the Feedback Agent to appear on the canvas
 
-![Shopping Cart](<!-- PLACEHOLDER: Add shopping cart screenshot -->)
+![Shopping Cart](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/cart.png)
 
 ---
 
@@ -190,7 +187,7 @@ When a friend opens the shared cart link, they see a standalone page with:
 - **Friend comments** tagged with indigo "FRIEND" badge
 - **Cross-tab sync** — votes and comments persist to shared Zustand store in localStorage, readable by the main app's Socials tab
 
-![Shared Cart](<!-- PLACEHOLDER: Add shared cart screenshot -->)
+![Shared Cart](https://raw.githubusercontent.com/binaryshrey/Phia-Signal/refs/heads/main/assets/social.png)
 
 ---
 
@@ -218,7 +215,6 @@ The `/analytics` page visualizes everything Phia has learned:
 - Each learning as a colored pill with category dot, label, and value
 - Synced status indicator
 
-![Analytics](<!-- PLACEHOLDER: Add analytics screenshot -->)
 
 ---
 
@@ -246,18 +242,6 @@ Every interaction teaches Phia and updates the brain visualization:
 | `/api/virtual-tryon`         | POST   | Virtual try-on via Vertex AI + aesthetic background via Gemini |
 | `/api/elevenlabs-signed-url` | GET    | Signed WebSocket URL for ElevenLabs agent                      |
 
----
-
-## Environment Variables
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-ANTHROPIC_API_KEY=
-GEMINI_API_KEY=
-ELEVENLABS_API_KEY=
-NEXT_PUBLIC_ELEVENLABS_AGENT_ID=
-```
 
 ---
 
