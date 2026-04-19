@@ -171,13 +171,13 @@ export default function Home() {
             <img
               src="/k_pop_guru.svg"
               alt=""
-              className="absolute -left-48 top-4 h-[5em] opacity-80"
+              className="absolute -left-48 top-4 h-[5em] opacity-80 pointer-events-none"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/Rectangle.svg"
               alt=""
-              className="absolute -right-48 top-20 h-[5em] opacity-80"
+              className="absolute -right-48 top-20 h-[5em] opacity-80 pointer-events-none"
             />
 
             <Link

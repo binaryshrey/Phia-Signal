@@ -24,11 +24,11 @@ const BUCKET = "phia";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type UploadedFile = {
-  uid: string;          // unique id within a slot
+  uid: string; // unique id within a slot
   name: string;
-  url: string;          // blob URL for instant preview
-  storagePath: string | null;   // path in Supabase Storage (null while uploading)
-  publicUrl: string | null;     // public URL after upload
+  url: string; // blob URL for instant preview
+  storagePath: string | null; // path in Supabase Storage (null while uploading)
+  publicUrl: string | null; // public URL after upload
   uploading: boolean;
   error: string | null;
 };
@@ -43,66 +43,157 @@ type PhotoSlot = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SKIN_TONES = [
-  { id: "fair",   label: "Fair",   color: "#F9E4C8" },
-  { id: "light",  label: "Light",  color: "#F0C9A0" },
+  { id: "fair", label: "Fair", color: "#F9E4C8" },
+  { id: "light", label: "Light", color: "#F0C9A0" },
   { id: "medium", label: "Medium", color: "#D4956A" },
-  { id: "tan",    label: "Tan",    color: "#C07E4F" },
-  { id: "deep",   label: "Deep",   color: "#8B5A2B" },
-  { id: "rich",   label: "Rich",   color: "#4A2512" },
+  { id: "tan", label: "Tan", color: "#C07E4F" },
+  { id: "deep", label: "Deep", color: "#8B5A2B" },
+  { id: "rich", label: "Rich", color: "#4A2512" },
 ];
 
 const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 const PANT_SIZES = ["26", "28", "30", "32", "34", "36", "38", "40"];
 
-const SHOE_SIZES = ["6", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "12", "13"];
-
-const PALETTE_COLORS = [
-  { id: "black",    label: "Black",    color: "#1A1A1A" },
-  { id: "white",    label: "White",    color: "#F5F5F0" },
-  { id: "cream",    label: "Cream",    color: "#F5F0E8" },
-  { id: "beige",    label: "Beige",    color: "#D4C5A9" },
-  { id: "brown",    label: "Brown",    color: "#8B6914" },
-  { id: "navy",     label: "Navy",     color: "#1B2A4A" },
-  { id: "camel",    label: "Camel",    color: "#C19A6B" },
-  { id: "olive",    label: "Olive",    color: "#6B7A3D" },
-  { id: "burgundy", label: "Burgundy", color: "#722F37" },
-  { id: "blush",    label: "Blush",    color: "#E8B4B8" },
-  { id: "slate",    label: "Slate",    color: "#7A8B9A" },
-  { id: "sage",     label: "Sage",     color: "#9CAF88" },
-  { id: "rust",     label: "Rust",     color: "#B5451B" },
-  { id: "cobalt",   label: "Cobalt",   color: "#2C4BB4" },
-  { id: "emerald",  label: "Emerald",  color: "#2D6A4F" },
-  { id: "gold",     label: "Gold",     color: "#C9A84C" },
+const SHOE_SIZES = [
+  "6",
+  "7",
+  "7.5",
+  "8",
+  "8.5",
+  "9",
+  "9.5",
+  "10",
+  "10.5",
+  "11",
+  "12",
+  "13",
 ];
 
-const TEXTURES = [
-  "Cotton", "Linen", "Silk", "Satin", "Denim",
-  "Leather", "Suede", "Velvet", "Knit", "Tweed",
-  "Chiffon", "Jersey", "Wool", "Cashmere", "Corduroy",
+const PALETTE_COLORS = [
+  { id: "black", label: "Black", color: "#1A1A1A" },
+  { id: "white", label: "White", color: "#F5F5F0" },
+  { id: "cream", label: "Cream", color: "#F5F0E8" },
+  { id: "beige", label: "Beige", color: "#D4C5A9" },
+  { id: "brown", label: "Brown", color: "#8B6914" },
+  { id: "navy", label: "Navy", color: "#1B2A4A" },
+  { id: "camel", label: "Camel", color: "#C19A6B" },
+  { id: "olive", label: "Olive", color: "#6B7A3D" },
+  { id: "burgundy", label: "Burgundy", color: "#722F37" },
+  { id: "blush", label: "Blush", color: "#E8B4B8" },
+  { id: "slate", label: "Slate", color: "#7A8B9A" },
+  { id: "sage", label: "Sage", color: "#9CAF88" },
+  { id: "rust", label: "Rust", color: "#B5451B" },
+  { id: "cobalt", label: "Cobalt", color: "#2C4BB4" },
+  { id: "emerald", label: "Emerald", color: "#2D6A4F" },
+  { id: "gold", label: "Gold", color: "#C9A84C" },
+];
+
+const PATTERNS_TO_AVOID = [
+  { id: "floral", label: "Floral", image: "🌸" },
+  { id: "stripes", label: "Stripes", image: "▬" },
+  { id: "polka-dots", label: "Polka Dots", image: "⚬" },
+  { id: "plaid", label: "Plaid", image: "🏁" },
+  { id: "animal-print", label: "Animal Print", image: "🐆" },
+  { id: "paisley", label: "Paisley", image: "🪬" },
+  { id: "camo", label: "Camo", image: "🌿" },
+  { id: "tie-dye", label: "Tie Dye", image: "🌀" },
+  { id: "tropical", label: "Tropical", image: "🌴" },
+  { id: "argyle", label: "Argyle", image: "◆" },
+  { id: "abstract", label: "Abstract", image: "🎨" },
+  { id: "neon", label: "Neon Colors", image: "💡" },
+];
+
+const CELEBRITIES = [
+  {
+    id: "jasmine-tookes",
+    name: "Jasmine Tookes",
+    image: "/celebrities/jasmine-tookes.jpg",
+    tryon: "/celebrities/tryon/jasmine-tookes.png",
+  },
+  {
+    id: "paris-hilton",
+    name: "Paris Hilton",
+    image: "/celebrities/paris-hilton.jpg",
+    tryon: "/celebrities/tryon/paris-hilton.png",
+  },
+  {
+    id: "toni-breidinger",
+    name: "Toni Breidinger",
+    image: "/celebrities/toni-breidinger.jpg",
+    tryon: "/celebrities/tryon/toni-breidinger.png",
+  },
+  {
+    id: "zara-larsson",
+    name: "Zara Larsson",
+    image: "/celebrities/zara-larsson.jpg",
+    tryon: "/celebrities/tryon/zara-larsson.png",
+  },
+  {
+    id: "mckenna-grace",
+    name: "McKenna Grace",
+    image: "/celebrities/mckenna-grace.jpg",
+    tryon: "/celebrities/tryon/mckenna-grace.png",
+  },
+  {
+    id: "hanna-goefft",
+    name: "Hanna Goefft",
+    image: "/celebrities/hanna-goefft.jpg",
+    tryon: "/celebrities/tryon/hanna-goefft.png",
+  },
+  {
+    id: "zendaya",
+    name: "Zendaya",
+    image: "/celebrities/zendaya.jpg",
+    tryon: "/celebrities/tryon/zendaya.png",
+  },
+  {
+    id: "chloe-shih",
+    name: "Chloe Shih",
+    image: "/celebrities/chloe-shih.jpg",
+    tryon: "/celebrities/tryon/chloe-shih.png",
+  },
 ];
 
 const BRANDS = [
-  "Zara", "H&M", "Uniqlo", "Mango", "COS",
-  "& Other Stories", "Arket", "Massimo Dutti",
-  "Ralph Lauren", "Tommy Hilfiger", "Calvin Klein",
-  "Levi's", "Acne Studios", "Toteme", "The Row",
-  "Jacquemus", "Sandro", "A.P.C.", "Ami Paris",
-  "Brunello Cucinelli", "Loro Piana", "Issey Miyake",
-  "Bottega Veneta", "Prada", "Gucci",
+  "Zara",
+  "H&M",
+  "Uniqlo",
+  "Mango",
+  "COS",
+  "& Other Stories",
+  "Arket",
+  "Massimo Dutti",
+  "Ralph Lauren",
+  "Tommy Hilfiger",
+  "Calvin Klein",
+  "Levi's",
+  "Acne Studios",
+  "Toteme",
+  "The Row",
+  "Jacquemus",
+  "Sandro",
+  "A.P.C.",
+  "Ami Paris",
+  "Brunello Cucinelli",
+  "Loro Piana",
+  "Issey Miyake",
+  "Bottega Veneta",
+  "Prada",
+  "Gucci",
 ];
 
 const STYLE_VIBES = [
-  { id: "minimal",     label: "Minimal",     emoji: "◻️" },
-  { id: "classic",     label: "Classic",     emoji: "🎩" },
-  { id: "casual",      label: "Casual",      emoji: "👕" },
-  { id: "streetwear",  label: "Streetwear",  emoji: "🧢" },
-  { id: "bohemian",    label: "Bohemian",    emoji: "🌸" },
-  { id: "preppy",      label: "Preppy",      emoji: "⚓" },
-  { id: "edgy",        label: "Edgy",        emoji: "🖤" },
-  { id: "romantic",    label: "Romantic",    emoji: "🌹" },
-  { id: "athleisure",  label: "Athleisure",  emoji: "🏃" },
-  { id: "business",    label: "Business",    emoji: "💼" },
+  { id: "minimal", label: "Minimal", emoji: "◻️" },
+  { id: "classic", label: "Classic", emoji: "🎩" },
+  { id: "casual", label: "Casual", emoji: "👕" },
+  { id: "streetwear", label: "Streetwear", emoji: "🧢" },
+  { id: "bohemian", label: "Bohemian", emoji: "🌸" },
+  { id: "preppy", label: "Preppy", emoji: "⚓" },
+  { id: "edgy", label: "Edgy", emoji: "🖤" },
+  { id: "romantic", label: "Romantic", emoji: "🌹" },
+  { id: "athleisure", label: "Athleisure", emoji: "🏃" },
+  { id: "business", label: "Business", emoji: "💼" },
 ];
 
 const PHOTO_SLOTS: PhotoSlot[] = [
@@ -144,7 +235,7 @@ function isLight(hex: string) {
 async function uploadToSupabase(
   file: File,
   slotId: PhotoType,
-  uid: string
+  uid: string,
 ): Promise<{ storagePath: string; publicUrl: string } | { error: string }> {
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `onboarding/${slotId}/${uid}.${ext}`;
@@ -159,22 +250,42 @@ async function uploadToSupabase(
 
 // ─── Primitive components ─────────────────────────────────────────────────────
 
-function SizeChip({ value, selected, onClick }: { value: string; selected: boolean; onClick: () => void }) {
+function SizeChip({
+  value,
+  selected,
+  onClick,
+}: {
+  value: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-150
-        ${selected
-          ? "bg-[#8B6914] border-[#8B6914] text-white shadow-sm"
-          : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"}`}
+        ${
+          selected
+            ? "bg-[#8B6914] border-[#8B6914] text-white shadow-sm"
+            : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"
+        }`}
     >
       {value}
     </button>
   );
 }
 
-function ColorSwatch({ color, label, selected, onClick }: { color: string; label: string; selected: boolean; onClick: () => void }) {
+function ColorSwatch({
+  color,
+  label,
+  selected,
+  onClick,
+}: {
+  color: string;
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -186,34 +297,57 @@ function ColorSwatch({ color, label, selected, onClick }: { color: string; label
     >
       {selected && (
         <span className="absolute inset-0 flex items-center justify-center">
-          <RiCheckLine className="size-3.5" style={{ color: isLight(color) ? "#5A4A3A" : "#FAF7F2" }} />
+          <RiCheckLine
+            className="size-3.5"
+            style={{ color: isLight(color) ? "#5A4A3A" : "#FAF7F2" }}
+          />
         </span>
       )}
     </button>
   );
 }
 
-function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function Chip({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`px-3.5 py-1.5 rounded-full text-sm border transition-all duration-150
-        ${selected
-          ? "bg-[#8B6914] border-[#8B6914] text-white"
-          : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"}`}
+        ${
+          selected
+            ? "bg-[#8B6914] border-[#8B6914] text-white"
+            : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"
+        }`}
     >
       {label}
     </button>
   );
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-3">
       <div>
         <h3 className="text-sm font-semibold text-[#3A2D22]">{title}</h3>
-        {subtitle && <p className="text-xs text-[#9C8B7A] mt-0.5">{subtitle}</p>}
+        {subtitle && (
+          <p className="text-xs text-[#9C8B7A] mt-0.5">{subtitle}</p>
+        )}
       </div>
       {children}
     </div>
@@ -240,7 +374,7 @@ function PhotoUploadSlot({
       e.preventDefault();
       if (e.dataTransfer.files.length) onAdd(slot.id, e.dataTransfer.files);
     },
-    [slot.id, onAdd]
+    [slot.id, onAdd],
   );
 
   return (
@@ -253,10 +387,14 @@ function PhotoUploadSlot({
         className={`group flex flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 w-full
           ${hasFiles ? "h-24 border-[#C4A882] bg-[#F5EFE6]" : "h-44 border-[#DDD0BE] bg-[#FAF7F2] hover:border-[#C4A882] hover:bg-[#F5EFE6]"}`}
       >
-        <div className={`flex items-center justify-center rounded-full bg-[#EDE4D8] group-hover:bg-[#E3D5C5] transition-colors ${hasFiles ? "size-8" : "size-10"}`}>
-          {hasFiles
-            ? <RiImageAddLine className="size-4 text-[#9C8B7A]" />
-            : slot.icon}
+        <div
+          className={`flex items-center justify-center rounded-full bg-[#EDE4D8] group-hover:bg-[#E3D5C5] transition-colors ${hasFiles ? "size-8" : "size-10"}`}
+        >
+          {hasFiles ? (
+            <RiImageAddLine className="size-4 text-[#9C8B7A]" />
+          ) : (
+            slot.icon
+          )}
         </div>
         <div className="text-center px-4">
           {hasFiles ? (
@@ -292,16 +430,38 @@ function PhotoUploadSlot({
       {hasFiles && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {files.map((f) => (
-            <div key={f.uid} className="relative shrink-0 size-16 rounded-xl overflow-hidden border border-[#E3D5C5]">
+            <div
+              key={f.uid}
+              className="relative shrink-0 size-16 rounded-xl overflow-hidden border border-[#E3D5C5]"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={f.url} alt={f.name} className={`h-full w-full object-cover transition-opacity ${f.uploading ? "opacity-40" : "opacity-100"}`} />
+              <img
+                src={f.url}
+                alt={f.name}
+                className={`h-full w-full object-cover transition-opacity ${f.uploading ? "opacity-40" : "opacity-100"}`}
+              />
 
               {/* Uploading spinner */}
               {f.uploading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="size-5 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  <svg
+                    className="size-5 animate-spin text-[#8B6914]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
                   </svg>
                 </div>
               )}
@@ -309,7 +469,9 @@ function PhotoUploadSlot({
               {/* Error indicator */}
               {f.error && !f.uploading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
-                  <span className="text-[9px] text-red-600 font-medium px-1 text-center leading-tight">Failed</span>
+                  <span className="text-[9px] text-red-600 font-medium px-1 text-center leading-tight">
+                    Failed
+                  </span>
                 </div>
               )}
 
@@ -342,8 +504,13 @@ function AIUploadTab({
   onAdd: (slotId: PhotoType, picked: FileList) => void;
   onRemove: (slotId: PhotoType, uid: string) => void;
 }) {
-  const slotsWithFiles = PHOTO_SLOTS.filter((s) => (files[s.id]?.length ?? 0) > 0).length;
-  const totalImages = Object.values(files).reduce((sum, arr) => sum + (arr?.length ?? 0), 0);
+  const slotsWithFiles = PHOTO_SLOTS.filter(
+    (s) => (files[s.id]?.length ?? 0) > 0,
+  ).length;
+  const totalImages = Object.values(files).reduce(
+    (sum, arr) => sum + (arr?.length ?? 0),
+    0,
+  );
 
   return (
     <div className="space-y-8">
@@ -352,10 +519,12 @@ function AIUploadTab({
           <RiSparklingLine className="size-4 text-[#8B6914]" />
         </div>
         <div>
-          <p className="text-sm font-medium text-[#3A2D22]">Let Phia learn your look</p>
+          <p className="text-sm font-medium text-[#3A2D22]">
+            Let Phia learn your look
+          </p>
           <p className="text-xs text-[#7A6A5A] mt-0.5 leading-relaxed">
-            Upload multiple photos per category — the more Phia sees, the better it understands
-            your body shape, complexion, and personal style.
+            Upload multiple photos per category — the more Phia sees, the better
+            it understands your body shape, complexion, and personal style.
           </p>
         </div>
       </div>
@@ -375,7 +544,10 @@ function AIUploadTab({
       {totalImages > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-[#9C8B7A]">
-            <span>{totalImages} photo{totalImages !== 1 ? "s" : ""} across {slotsWithFiles} of 4 categories</span>
+            <span>
+              {totalImages} photo{totalImages !== 1 ? "s" : ""} across{" "}
+              {slotsWithFiles} of 4 categories
+            </span>
             <span>{Math.round((slotsWithFiles / 4) * 100)}%</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-[#EDE4D8] overflow-hidden">
@@ -387,21 +559,45 @@ function AIUploadTab({
         </div>
       )}
 
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-[#9C8B7A] uppercase tracking-wider">For best results</p>
-        <ul className="space-y-1.5 text-xs text-[#7A6A5A]">
-          {[
-            "Use photos with good, natural lighting",
-            "Stand against a plain or neutral background",
-            "Wear form-fitting clothes so Phia can read your silhouette",
-            "Keep your face clearly visible in the selfie",
-          ].map((tip) => (
-            <li key={tip} className="flex items-start gap-2">
-              <span className="mt-0.5 size-1.5 rounded-full bg-[#C4A882] shrink-0 inline-block" />
-              {tip}
-            </li>
-          ))}
-        </ul>
+      {/* Instagram import */}
+      <div className="mt-8 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#E3D5C5]" />
+          <span className="text-xs text-[#9C8B7A]">or add from Instagram</span>
+          <div className="h-px flex-1 bg-[#E3D5C5]" />
+        </div>
+
+        <div className="flex items-center gap-2 rounded-xl border border-[#DDD0BE] bg-white px-3 py-2.5">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5 shrink-0 text-[#9C8B7A]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <rect x="2" y="2" width="20" height="20" rx="5" />
+            <circle cx="12" cy="12" r="5" />
+            <circle
+              cx="17.5"
+              cy="6.5"
+              r="1.5"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
+          <span className="text-sm text-[#9C8B7A]">instagram.com/@</span>
+          <input
+            type="text"
+            placeholder="username"
+            className="flex-1 bg-transparent text-sm text-[#3A2D22] placeholder:text-[#C4A882] outline-none"
+          />
+          <button
+            type="button"
+            className="shrink-0 rounded-lg border border-[#DDD0BE] px-3.5 py-1.5 text-xs font-medium text-[#5A4A3A] hover:bg-[#F5EFE6] transition-colors"
+          >
+            Import
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -422,6 +618,7 @@ type ManualState = {
   selectedColors: Set<string>;
   selectedTextures: Set<string>;
   selectedBrands: Set<string>;
+  selectedCelebs: Set<string>;
   selectedVibes: Set<string>;
   customVibes: CustomVibe[];
   outfitDetecting: boolean;
@@ -436,11 +633,43 @@ type ManualSetters = {
   toggleTexture: (v: string) => void;
   toggleBrand: (v: string) => void;
   toggleVibe: (v: string) => void;
+  toggleCeleb: (v: string) => void;
 };
 
-function ManualSetupTab({ state, setters }: { state: ManualState; setters: ManualSetters }) {
-  const { skinTone, skinToneDetecting, clothingSize, clothingSizeDetecting, pantSize, pantSizeDetecting, shoeSize, selectedColors, selectedTextures, selectedBrands, selectedVibes, customVibes, outfitDetecting } = state;
-  const { setSkinTone, setClothingSize, setPantSize, setShoeSize, toggleColor, toggleTexture, toggleBrand, toggleVibe } = setters;
+function ManualSetupTab({
+  state,
+  setters,
+}: {
+  state: ManualState;
+  setters: ManualSetters;
+}) {
+  const {
+    skinTone,
+    skinToneDetecting,
+    clothingSize,
+    clothingSizeDetecting,
+    pantSize,
+    pantSizeDetecting,
+    shoeSize,
+    selectedColors,
+    selectedTextures,
+    selectedBrands,
+    selectedVibes,
+    selectedCelebs,
+    customVibes,
+    outfitDetecting,
+  } = state;
+  const {
+    setSkinTone,
+    setClothingSize,
+    setPantSize,
+    setShoeSize,
+    toggleColor,
+    toggleTexture,
+    toggleBrand,
+    toggleVibe,
+    toggleCeleb,
+  } = setters;
 
   return (
     <div className="space-y-8">
@@ -450,18 +679,35 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
           skinToneDetecting
             ? undefined
             : skinTone
-            ? "Auto-detected from your selfie — tap to change"
-            : "Helps Phia suggest flattering colors for you"
+              ? "Auto-detected from your selfie — tap to change"
+              : "Helps Phia suggest flattering colors for you"
         }
       >
         {/* Detecting banner */}
         {skinToneDetecting && (
           <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-            <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="size-3.5 shrink-0 animate-spin text-[#8B6914]"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
-            <p className="text-xs text-[#7A6A5A]">Phia is analysing your selfie to detect your skin tone…</p>
+            <p className="text-xs text-[#7A6A5A]">
+              Phia is analysing your selfie to detect your skin tone…
+            </p>
           </div>
         )}
 
@@ -473,11 +719,13 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
                 onClick={() => setSkinTone(skinTone === tone.id ? "" : tone.id)}
                 title={tone.label}
                 className={`size-10 rounded-full border-2 transition-all duration-200 hover:scale-110
-                  ${skinTone === tone.id
-                    ? "border-[#8B6914] scale-110 shadow-md ring-2 ring-[#8B6914]/20"
-                    : skinToneDetecting
-                    ? "border-transparent opacity-40 cursor-wait"
-                    : "border-transparent"}`}
+                  ${
+                    skinTone === tone.id
+                      ? "border-[#8B6914] scale-110 shadow-md ring-2 ring-[#8B6914]/20"
+                      : skinToneDetecting
+                        ? "border-transparent opacity-40 cursor-wait"
+                        : "border-transparent"
+                  }`}
                 style={{ backgroundColor: tone.color }}
                 disabled={skinToneDetecting}
               >
@@ -487,7 +735,9 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
                   </span>
                 )}
               </button>
-              <span className={`text-[10px] transition-colors ${skinTone === tone.id ? "text-[#8B6914] font-medium" : "text-[#9C8B7A]"}`}>
+              <span
+                className={`text-[10px] transition-colors ${skinTone === tone.id ? "text-[#8B6914] font-medium" : "text-[#9C8B7A]"}`}
+              >
                 {tone.label}
               </span>
             </div>
@@ -498,7 +748,9 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
         {skinTone && !skinToneDetecting && (
           <div className="flex items-center gap-1.5 mt-1">
             <RiSparklingLine className="size-3 text-[#8B6914]" />
-            <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
+            <span className="text-[10px] text-[#8B6914] font-medium">
+              Detected by Phia AI
+            </span>
           </div>
         )}
       </Section>
@@ -509,28 +761,52 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
           clothingSizeDetecting
             ? undefined
             : clothingSize
-            ? "Auto-detected from your full body photo — tap to change"
-            : "Your typical top/dress size"
+              ? "Auto-detected from your full body photo — tap to change"
+              : "Your typical top/dress size"
         }
       >
         {clothingSizeDetecting && (
           <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-            <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="size-3.5 shrink-0 animate-spin text-[#8B6914]"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
-            <p className="text-xs text-[#7A6A5A]">Phia is analysing your photos to estimate your clothing size…</p>
+            <p className="text-xs text-[#7A6A5A]">
+              Phia is analysing your photos to estimate your clothing size…
+            </p>
           </div>
         )}
         <div className="flex flex-wrap gap-2">
           {CLOTHING_SIZES.map((s) => (
-            <SizeChip key={s} value={s} selected={clothingSize === s} onClick={() => setClothingSize(clothingSize === s ? "" : s)} />
+            <SizeChip
+              key={s}
+              value={s}
+              selected={clothingSize === s}
+              onClick={() => setClothingSize(clothingSize === s ? "" : s)}
+            />
           ))}
         </div>
         {clothingSize && !clothingSizeDetecting && (
           <div className="flex items-center gap-1.5 mt-1">
             <RiSparklingLine className="size-3 text-[#8B6914]" />
-            <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
+            <span className="text-[10px] text-[#8B6914] font-medium">
+              Detected by Phia AI
+            </span>
           </div>
         )}
       </Section>
@@ -542,35 +818,64 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
             pantSizeDetecting
               ? undefined
               : pantSize
-              ? "Auto-detected — tap to change"
-              : "In inches"
+                ? "Auto-detected — tap to change"
+                : "In inches"
           }
         >
           {pantSizeDetecting && (
             <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-              <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              <svg
+                className="size-3.5 shrink-0 animate-spin text-[#8B6914]"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
               </svg>
-              <p className="text-xs text-[#7A6A5A]">Estimating your pant size…</p>
+              <p className="text-xs text-[#7A6A5A]">
+                Estimating your pant size…
+              </p>
             </div>
           )}
           <div className="flex flex-wrap gap-2">
             {PANT_SIZES.map((s) => (
-              <SizeChip key={s} value={s} selected={pantSize === s} onClick={() => setPantSize(pantSize === s ? "" : s)} />
+              <SizeChip
+                key={s}
+                value={s}
+                selected={pantSize === s}
+                onClick={() => setPantSize(pantSize === s ? "" : s)}
+              />
             ))}
           </div>
           {pantSize && !pantSizeDetecting && (
             <div className="flex items-center gap-1.5 mt-1">
               <RiSparklingLine className="size-3 text-[#8B6914]" />
-              <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
+              <span className="text-[10px] text-[#8B6914] font-medium">
+                Detected by Phia AI
+              </span>
             </div>
           )}
         </Section>
         <Section title="Shoe Size (US)" subtitle="Your standard size">
           <div className="flex flex-wrap gap-2">
             {SHOE_SIZES.map((s) => (
-              <SizeChip key={s} value={s} selected={shoeSize === s} onClick={() => setShoeSize(shoeSize === s ? "" : s)} />
+              <SizeChip
+                key={s}
+                value={s}
+                selected={shoeSize === s}
+                onClick={() => setShoeSize(shoeSize === s ? "" : s)}
+              />
             ))}
           </div>
         </Section>
@@ -582,17 +887,34 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
           outfitDetecting
             ? undefined
             : selectedVibes.size > 0
-            ? "Auto-detected from your outfits — tap to adjust"
-            : "Pick all that feel like you"
+              ? "Auto-detected from your outfits — tap to adjust"
+              : "Pick all that feel like you"
         }
       >
         {outfitDetecting && (
           <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-            <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="size-3.5 shrink-0 animate-spin text-[#8B6914]"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
-            <p className="text-xs text-[#7A6A5A]">Phia is analysing your outfit photos to detect your style…</p>
+            <p className="text-xs text-[#7A6A5A]">
+              Phia is analysing your outfit photos to detect your style…
+            </p>
           </div>
         )}
         <div className="flex flex-wrap gap-2">
@@ -602,9 +924,11 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
               type="button"
               onClick={() => toggleVibe(v.id)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border transition-all duration-150
-                ${selectedVibes.has(v.id)
-                  ? "bg-[#8B6914] border-[#8B6914] text-white"
-                  : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"}`}
+                ${
+                  selectedVibes.has(v.id)
+                    ? "bg-[#8B6914] border-[#8B6914] text-white"
+                    : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"
+                }`}
             >
               <span className="text-base leading-none">{v.emoji}</span>
               {v.label}
@@ -617,9 +941,11 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
               type="button"
               onClick={() => toggleVibe(v.id)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm border transition-all duration-150
-                ${selectedVibes.has(v.id)
-                  ? "bg-[#8B6914] border-[#8B6914] text-white"
-                  : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"}`}
+                ${
+                  selectedVibes.has(v.id)
+                    ? "bg-[#8B6914] border-[#8B6914] text-white"
+                    : "bg-white border-[#DDD0BE] text-[#5A4A3A] hover:border-[#C4A882] hover:bg-[#FAF7F2]"
+                }`}
             >
               <span className="text-base leading-none">{v.emoji}</span>
               {v.label}
@@ -629,7 +955,9 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
         {selectedVibes.size > 0 && !outfitDetecting && (
           <div className="flex items-center gap-1.5 mt-1">
             <RiSparklingLine className="size-3 text-[#8B6914]" />
-            <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
+            <span className="text-[10px] text-[#8B6914] font-medium">
+              Detected by Phia AI
+            </span>
           </div>
         )}
       </Section>
@@ -640,17 +968,34 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
           outfitDetecting
             ? undefined
             : selectedColors.size > 0
-            ? "Auto-detected from your outfits — tap to adjust"
-            : "Shades you gravitate toward"
+              ? "Auto-detected from your outfits — tap to adjust"
+              : "Shades you gravitate toward"
         }
       >
         {outfitDetecting && (
           <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-            <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="size-3.5 shrink-0 animate-spin text-[#8B6914]"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
-            <p className="text-xs text-[#7A6A5A]">Detecting your favourite colors…</p>
+            <p className="text-xs text-[#7A6A5A]">
+              Detecting your favourite colors…
+            </p>
           </div>
         )}
         <div className="flex flex-wrap gap-2.5">
@@ -667,12 +1012,17 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
         {selectedColors.size > 0 && (
           <>
             <p className="text-xs text-[#9C8B7A] mt-1">
-              {[...selectedColors].map((id) => PALETTE_COLORS.find((c) => c.id === id)?.label).filter(Boolean).join(", ")}
+              {[...selectedColors]
+                .map((id) => PALETTE_COLORS.find((c) => c.id === id)?.label)
+                .filter(Boolean)
+                .join(", ")}
             </p>
             {!outfitDetecting && (
               <div className="flex items-center gap-1.5 mt-1">
                 <RiSparklingLine className="size-3 text-[#8B6914]" />
-                <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
+                <span className="text-[10px] text-[#8B6914] font-medium">
+                  Detected by Phia AI
+                </span>
               </div>
             )}
           </>
@@ -680,41 +1030,83 @@ function ManualSetupTab({ state, setters }: { state: ManualState; setters: Manua
       </Section>
 
       <Section
-        title="Textures & Fabrics"
-        subtitle={
-          outfitDetecting
-            ? undefined
-            : selectedTextures.size > 0
-            ? "Auto-detected from your outfits — tap to adjust"
-            : "Materials you love to wear"
-        }
+        title="Patterns to Avoid"
+        subtitle="Select patterns you don't want Phia to recommend"
       >
-        {outfitDetecting && (
-          <div className="flex items-center gap-2.5 rounded-xl bg-[#F5EFE6] border border-[#E3D5C5] px-3.5 py-2.5 mb-1">
-            <svg className="size-3.5 shrink-0 animate-spin text-[#8B6914]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
-            <p className="text-xs text-[#7A6A5A]">Identifying fabrics and textures…</p>
-          </div>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {TEXTURES.map((t) => (
-            <Chip key={t} label={t} selected={selectedTextures.has(t)} onClick={() => toggleTexture(t)} />
+        <div className="grid grid-cols-3 gap-2">
+          {PATTERNS_TO_AVOID.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => toggleTexture(p.id)}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 transition-all duration-150
+                ${
+                  selectedTextures.has(p.id)
+                    ? "border-red-400 bg-red-50 shadow-sm"
+                    : "border-[#DDD0BE] bg-white hover:border-[#C4A882] hover:bg-[#FAF7F2]"
+                }`}
+            >
+              <span className="text-2xl leading-none">{p.image}</span>
+              <span
+                className={`text-[11px] font-medium ${selectedTextures.has(p.id) ? "text-red-600" : "text-[#5A4A3A]"}`}
+              >
+                {p.label}
+              </span>
+              {selectedTextures.has(p.id) && (
+                <span className="text-[9px] text-red-400 font-medium">
+                  Avoiding
+                </span>
+              )}
+            </button>
           ))}
         </div>
-        {selectedTextures.size > 0 && !outfitDetecting && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <RiSparklingLine className="size-3 text-[#8B6914]" />
-            <span className="text-[10px] text-[#8B6914] font-medium">Detected by Phia AI</span>
-          </div>
-        )}
       </Section>
 
       <Section title="Brands You Love" subtitle="Labels you already trust">
         <div className="flex flex-wrap gap-2">
           {BRANDS.map((b) => (
-            <Chip key={b} label={b} selected={selectedBrands.has(b)} onClick={() => toggleBrand(b)} />
+            <Chip
+              key={b}
+              label={b}
+              selected={selectedBrands.has(b)}
+              onClick={() => toggleBrand(b)}
+            />
+          ))}
+        </div>
+      </Section>
+
+      <Section
+        title="Celebrity Watchlist"
+        subtitle="Whose style do you admire?"
+      >
+        <div className="grid grid-cols-4 gap-2">
+          {CELEBRITIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => toggleCeleb(c.id)}
+              className="relative overflow-hidden rounded-xl aspect-[3/4] group"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.image}
+                alt={c.name}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/30" />
+              <div className="absolute inset-x-0 bottom-0 p-1.5">
+                <p className="text-[9px] font-semibold text-white text-center leading-tight drop-shadow-sm">
+                  {c.name}
+                </p>
+              </div>
+              {selectedCelebs.has(c.id) && (
+                <div className="absolute inset-0 border-3 border-[#8B6914] rounded-xl">
+                  <div className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-[#8B6914]">
+                    <RiCheckLine className="size-3 text-white" />
+                  </div>
+                </div>
+              )}
+            </button>
           ))}
         </div>
       </Section>
@@ -747,9 +1139,18 @@ function SaveLoader({ uploadProgress }: { uploadProgress: number }) {
       <div className="relative mb-10 flex items-center justify-center">
         {/* Outer ring */}
         <svg className="absolute size-24 -rotate-90" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" fill="none" stroke="#EDE4D8" strokeWidth="4" />
           <circle
-            cx="48" cy="48" r="40"
+            cx="48"
+            cy="48"
+            r="40"
+            fill="none"
+            stroke="#EDE4D8"
+            strokeWidth="4"
+          />
+          <circle
+            cx="48"
+            cy="48"
+            r="40"
             fill="none"
             stroke="#8B6914"
             strokeWidth="4"
@@ -799,55 +1200,240 @@ export default function OnboardingPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingNext, setProcessingNext] = useState(false);
 
+  // ── ElevenLabs Voice Agent (direct WebSocket, one-way) ───────────────────
+  const [agentSpeaking, setAgentSpeaking] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const audioChunksRef = useRef<string[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const nextPlayTimeRef = useRef(0);
+  const sampleRateRef = useRef(16000);
+
+  const playBufferedChunks = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || ctx.state !== "running") return;
+
+    const chunks = audioChunksRef.current;
+    audioChunksRef.current = [];
+
+    for (const base64Audio of chunks) {
+      const raw = atob(base64Audio);
+      const pcm16 = new Int16Array(raw.length / 2);
+      for (let i = 0; i < pcm16.length; i++) {
+        pcm16[i] = raw.charCodeAt(i * 2) | (raw.charCodeAt(i * 2 + 1) << 8);
+      }
+      const float32 = new Float32Array(pcm16.length);
+      for (let i = 0; i < pcm16.length; i++) {
+        float32[i] = pcm16[i] / 32768;
+      }
+      const buffer = ctx.createBuffer(1, float32.length, sampleRateRef.current);
+      buffer.copyToChannel(float32, 0);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      const startTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
+      source.start(startTime);
+      nextPlayTimeRef.current = startTime + buffer.duration;
+    }
+  }, []);
+
+  // Unlock audio on any user interaction
+  const unlockAudio = useCallback(() => {
+    if (audioUnlocked) return;
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContext();
+    }
+    audioCtxRef.current.resume().then(() => {
+      nextPlayTimeRef.current = audioCtxRef.current!.currentTime;
+      setAudioUnlocked(true);
+      setAgentSpeaking(true);
+      playBufferedChunks();
+    });
+  }, [audioUnlocked, playBufferedChunks]);
+
+  useEffect(() => {
+    const handler = () => unlockAudio();
+    window.addEventListener("click", handler, { once: true });
+    window.addEventListener("touchstart", handler, { once: true });
+    window.addEventListener("keydown", handler, { once: true });
+    return () => {
+      window.removeEventListener("click", handler);
+      window.removeEventListener("touchstart", handler);
+      window.removeEventListener("keydown", handler);
+    };
+  }, [unlockAudio]);
+
+  useEffect(() => {
+    const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+    if (!agentId) return;
+
+    const connect = () => {
+      const ws = new WebSocket(
+        `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`,
+      );
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("[11Labs] WebSocket connected");
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          switch (msg.type) {
+            case "conversation_initiation_metadata": {
+              const format = String(
+                msg.conversation_initiation_metadata_event
+                  ?.agent_output_audio_format ?? "",
+              );
+              const match = format.match(/pcm_(\d+)/i);
+              if (match?.[1]) sampleRateRef.current = Number(match[1]);
+
+              // Trigger agent greeting
+              ws.send(
+                JSON.stringify({
+                  type: "user_message",
+                  text: "Welcome me to Phia onboarding. Briefly explain that I can upload photos and set my style preferences. Keep it warm, short, and friendly.",
+                }),
+              );
+              break;
+            }
+
+            case "audio":
+              if (msg.audio_event?.audio_base_64) {
+                const ctx = audioCtxRef.current;
+                if (ctx && ctx.state === "running") {
+                  // Play immediately
+                  audioChunksRef.current.push(msg.audio_event.audio_base_64);
+                  playBufferedChunks();
+                } else {
+                  // Buffer for later
+                  audioChunksRef.current.push(msg.audio_event.audio_base_64);
+                }
+              }
+              break;
+
+            case "ping":
+              ws.send(
+                JSON.stringify({
+                  type: "pong",
+                  event_id: msg.ping_event?.event_id,
+                }),
+              );
+              break;
+
+            default:
+              break;
+          }
+        } catch {
+          // skip
+        }
+      };
+
+      ws.onclose = () => {
+        console.log("[11Labs] WebSocket closed");
+        setAgentSpeaking(false);
+      };
+
+      ws.onerror = (err) => {
+        console.error("[11Labs] WebSocket error:", err);
+        setAgentSpeaking(false);
+      };
+    };
+
+    const timer = setTimeout(connect, 600);
+    return () => {
+      clearTimeout(timer);
+      wsRef.current?.close();
+      audioCtxRef.current?.close();
+    };
+  }, [playBufferedChunks]);
+
   // Track in-flight upload promises so handleSave can await them all
   const pendingUploads = useRef<Set<Promise<void>>>(new Set());
 
   // ── AI tab state ──────────────────────────────────────────────────────────
-  const [files, setFiles] = useState<Partial<Record<PhotoType, UploadedFile[]>>>({});
+  const [files, setFiles] = useState<
+    Partial<Record<PhotoType, UploadedFile[]>>
+  >({});
 
-  const handleAdd = useCallback(async (slotId: PhotoType, picked: FileList) => {
-    const imageFiles = Array.from(picked).filter((f) => f.type.startsWith("image/"));
+  const addFilesToSlot = useCallback(
+    async (targetSlot: PhotoType, imageFiles: File[]) => {
+      const placeholders: UploadedFile[] = imageFiles.map((f) => ({
+        uid: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: f.name,
+        url: URL.createObjectURL(f),
+        storagePath: null,
+        publicUrl: null,
+        uploading: true,
+        error: null,
+      }));
 
-    // 1. Add placeholder entries immediately so previews appear at once
-    const placeholders: UploadedFile[] = imageFiles.map((f) => ({
-      uid: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      name: f.name,
-      url: URL.createObjectURL(f),
-      storagePath: null,
-      publicUrl: null,
-      uploading: true,
-      error: null,
-    }));
+      setFiles((prev) => ({
+        ...prev,
+        [targetSlot]: [...(prev[targetSlot] ?? []), ...placeholders],
+      }));
 
-    setFiles((prev) => ({
-      ...prev,
-      [slotId]: [...(prev[slotId] ?? []), ...placeholders],
-    }));
+      const uploadAll = Promise.all(
+        imageFiles.map(async (f, i) => {
+          const uid = placeholders[i].uid;
+          const result = await uploadToSupabase(f, targetSlot, uid);
+          setFiles((prev) => {
+            const current = prev[targetSlot] ?? [];
+            return {
+              ...prev,
+              [targetSlot]: current.map((entry) =>
+                entry.uid !== uid
+                  ? entry
+                  : "error" in result
+                    ? { ...entry, uploading: false, error: result.error }
+                    : {
+                        ...entry,
+                        uploading: false,
+                        storagePath: result.storagePath,
+                        publicUrl: result.publicUrl,
+                      },
+              ),
+            };
+          });
+        }),
+      ).then(() => {
+        pendingUploads.current.delete(uploadAll as unknown as Promise<void>);
+      });
 
-    // 2. Upload each file, track promise in ref, patch entry when done
-    const uploadAll = Promise.all(
-      imageFiles.map(async (f, i) => {
-        const uid = placeholders[i].uid;
-        const result = await uploadToSupabase(f, slotId, uid);
-        setFiles((prev) => {
-          const current = prev[slotId] ?? [];
-          return {
-            ...prev,
-            [slotId]: current.map((entry) =>
-              entry.uid !== uid
-                ? entry
-                : "error" in result
-                ? { ...entry, uploading: false, error: result.error }
-                : { ...entry, uploading: false, storagePath: result.storagePath, publicUrl: result.publicUrl }
-            ),
-          };
-        });
-      })
-    ).then(() => { pendingUploads.current.delete(uploadAll as unknown as Promise<void>); });
+      pendingUploads.current.add(uploadAll as unknown as Promise<void>);
+      await uploadAll;
+    },
+    [],
+  );
 
-    pendingUploads.current.add(uploadAll as unknown as Promise<void>);
-    await uploadAll;
-  }, []);
+  const handleAdd = useCallback(
+    async (slotId: PhotoType, picked: FileList) => {
+      const imageFiles = Array.from(picked).filter((f) =>
+        f.type.startsWith("image/"),
+      );
+
+      if (slotId === "selfie" && imageFiles.length > 3) {
+        // Distribute: first 3 → selfie, next 3 → full-body, rest → outfit
+        const selfieFiles = imageFiles.slice(0, 3);
+        const fullBodyFiles = imageFiles.slice(3, 6);
+        const outfitFiles = imageFiles.slice(6, 9);
+
+        const uploads: Promise<void>[] = [];
+        if (selfieFiles.length > 0)
+          uploads.push(addFilesToSlot("selfie", selfieFiles));
+        if (fullBodyFiles.length > 0)
+          uploads.push(addFilesToSlot("full-body", fullBodyFiles));
+        if (outfitFiles.length > 0)
+          uploads.push(addFilesToSlot("outfit", outfitFiles));
+        await Promise.all(uploads);
+      } else {
+        await addFilesToSlot(slotId, imageFiles);
+      }
+    },
+    [addFilesToSlot],
+  );
 
   const handleRemove = useCallback(async (slotId: PhotoType, uid: string) => {
     setFiles((prev) => {
@@ -879,13 +1465,21 @@ export default function OnboardingPage() {
   const [pantSize, setPantSize] = useState("");
   const [shoeSize, setShoeSize] = useState("");
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
-  const [selectedTextures, setSelectedTextures] = useState<Set<string>>(new Set());
+  const [selectedTextures, setSelectedTextures] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
+  const [selectedCelebs, setSelectedCelebs] = useState<Set<string>>(new Set());
   const [selectedVibes, setSelectedVibes] = useState<Set<string>>(new Set());
 
-  function toggle(set: Set<string>, setFn: (s: Set<string>) => void, val: string) {
+  function toggle(
+    set: Set<string>,
+    setFn: (s: Set<string>) => void,
+    val: string,
+  ) {
     const next = new Set(set);
-    if (next.has(val)) next.delete(val); else next.add(val);
+    if (next.has(val)) next.delete(val);
+    else next.add(val);
     setFn(next);
   }
 
@@ -894,7 +1488,9 @@ export default function OnboardingPage() {
     if (activeTab === "ai") {
       setProcessingNext(true);
 
-      const toastId = toast.loading("Uploading photos…", { duration: Infinity });
+      const toastId = toast.loading("Uploading photos…", {
+        duration: Infinity,
+      });
 
       // ── Step 1: wait for all in-flight uploads ────────────────────────────
       if (pendingUploads.current.size > 0) {
@@ -927,7 +1523,7 @@ export default function OnboardingPage() {
               if (detected) setSkinTone(detected);
             })
             .catch(() => {})
-            .finally(() => setSkinToneDetecting(false))
+            .finally(() => setSkinToneDetecting(false)),
         );
       }
 
@@ -945,15 +1541,17 @@ export default function OnboardingPage() {
             body: JSON.stringify({ imageUrls: fullBodyUrls }),
           })
             .then((res) => res.json())
-            .then(({ clothingSize: detectedClothing, pantSize: detectedPant }) => {
-              if (detectedClothing) setClothingSize(detectedClothing);
-              if (detectedPant) setPantSize(detectedPant);
-            })
+            .then(
+              ({ clothingSize: detectedClothing, pantSize: detectedPant }) => {
+                if (detectedClothing) setClothingSize(detectedClothing);
+                if (detectedPant) setPantSize(detectedPant);
+              },
+            )
             .catch(() => {})
             .finally(() => {
               setClothingSizeDetecting(false);
               setPantSizeDetecting(false);
-            })
+            }),
         );
       }
 
@@ -975,51 +1573,70 @@ export default function OnboardingPage() {
             body: JSON.stringify({ imageUrls: outfitUrls }),
           })
             .then((res) => res.json())
-            .then(({ vibes, customVibes: detectedCustomVibes, colors, textures }) => {
-              // Select detected known vibes
-              if (vibes?.length) {
-                setSelectedVibes((prev) => {
-                  const next = new Set(prev);
-                  for (const v of vibes) next.add(v);
-                  return next;
-                });
-              }
-              // Add custom vibes (not in predefined list) and select them
-              if (detectedCustomVibes?.length) {
-                const newCustom: CustomVibe[] = detectedCustomVibes.map((v: string) => ({
-                  id: v,
-                  label: v.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-                  emoji: "✨",
-                }));
-                setCustomVibes((prev) => {
-                  const existingIds = new Set(prev.map((c) => c.id));
-                  return [...prev, ...newCustom.filter((c: CustomVibe) => !existingIds.has(c.id))];
-                });
-                setSelectedVibes((prev) => {
-                  const next = new Set(prev);
-                  for (const v of detectedCustomVibes) next.add(v);
-                  return next;
-                });
-              }
-              // Select detected colors
-              if (colors?.length) {
-                setSelectedColors((prev) => {
-                  const next = new Set(prev);
-                  for (const c of colors) next.add(c);
-                  return next;
-                });
-              }
-              // Select detected textures
-              if (textures?.length) {
-                setSelectedTextures((prev) => {
-                  const next = new Set(prev);
-                  for (const t of textures) next.add(t);
-                  return next;
-                });
-              }
-            })
+            .then(
+              ({
+                vibes,
+                customVibes: detectedCustomVibes,
+                colors,
+                textures,
+              }) => {
+                // Select detected known vibes
+                if (vibes?.length) {
+                  setSelectedVibes((prev) => {
+                    const next = new Set(prev);
+                    for (const v of vibes) next.add(v);
+                    return next;
+                  });
+                }
+                // Add custom vibes (not in predefined list) and select them
+                if (detectedCustomVibes?.length) {
+                  const newCustom: CustomVibe[] = detectedCustomVibes.map(
+                    (v: string) => ({
+                      id: v,
+                      label: v
+                        .split(" ")
+                        .map(
+                          (w: string) => w.charAt(0).toUpperCase() + w.slice(1),
+                        )
+                        .join(" "),
+                      emoji: "✨",
+                    }),
+                  );
+                  setCustomVibes((prev) => {
+                    const existingIds = new Set(prev.map((c) => c.id));
+                    return [
+                      ...prev,
+                      ...newCustom.filter(
+                        (c: CustomVibe) => !existingIds.has(c.id),
+                      ),
+                    ];
+                  });
+                  setSelectedVibes((prev) => {
+                    const next = new Set(prev);
+                    for (const v of detectedCustomVibes) next.add(v);
+                    return next;
+                  });
+                }
+                // Select detected colors
+                if (colors?.length) {
+                  setSelectedColors((prev) => {
+                    const next = new Set(prev);
+                    for (const c of colors) next.add(c);
+                    return next;
+                  });
+                }
+                // Select detected textures
+                if (textures?.length) {
+                  setSelectedTextures((prev) => {
+                    const next = new Set(prev);
+                    for (const t of textures) next.add(t);
+                    return next;
+                  });
+                }
+              },
+            )
             .catch(() => {})
-            .finally(() => setOutfitDetecting(false))
+            .finally(() => setOutfitDetecting(false)),
         );
       }
 
@@ -1058,33 +1675,77 @@ export default function OnboardingPage() {
       textures: [...selectedTextures],
       brands: [...selectedBrands],
       styleVibes: [...selectedVibes],
+      patternsToAvoid: [...selectedTextures],
+      celebrities: [...selectedCelebs],
     });
     markCompleted(activeTab);
 
     router.push("/phia");
   }
 
-  const manualState: ManualState = { skinTone, skinToneDetecting, clothingSize, clothingSizeDetecting, pantSize, pantSizeDetecting, shoeSize, selectedColors, selectedTextures, selectedBrands, selectedVibes, customVibes, outfitDetecting };
+  const manualState: ManualState = {
+    skinTone,
+    skinToneDetecting,
+    clothingSize,
+    clothingSizeDetecting,
+    pantSize,
+    pantSizeDetecting,
+    shoeSize,
+    selectedColors,
+    selectedTextures,
+    selectedBrands,
+    selectedVibes,
+    selectedCelebs,
+    customVibes,
+    outfitDetecting,
+  };
   const manualSetters: ManualSetters = {
     setSkinTone,
     setClothingSize,
     setPantSize,
     setShoeSize,
-    toggleColor:   (v) => toggle(selectedColors,   setSelectedColors,   v),
+    toggleColor: (v) => toggle(selectedColors, setSelectedColors, v),
     toggleTexture: (v) => toggle(selectedTextures, setSelectedTextures, v),
-    toggleBrand:   (v) => toggle(selectedBrands,   setSelectedBrands,   v),
-    toggleVibe:    (v) => toggle(selectedVibes,    setSelectedVibes,    v),
+    toggleBrand: (v) => toggle(selectedBrands, setSelectedBrands, v),
+    toggleVibe: (v) => toggle(selectedVibes, setSelectedVibes, v),
+    toggleCeleb: (v) => toggle(selectedCelebs, setSelectedCelebs, v),
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
+    <div className="relative min-h-screen bg-[#FAF7F2] overflow-hidden">
+      <img
+        src="/Rectangle1.svg"
+        alt=""
+        className="pointer-events-none fixed top-28 right-[22%] h-12 z-0"
+      />
+      <img
+        src="/Rectangle.svg"
+        alt=""
+        className="pointer-events-none fixed bottom-30 left-[22%] h-12 z-0"
+      />
+      <img
+        src="/yoga.svg"
+        alt=""
+        className="pointer-events-none fixed top-[40%] left-[15%] h-14 z-0"
+      />
+      <img
+        src="/k_pop_guru.svg"
+        alt=""
+        className="pointer-events-none fixed bottom-[35%] right-[15%] h-14 z-0"
+      />
+
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E8DDD0] bg-[#FAF7F2]/80 backdrop-blur-md px-6 py-4">
         <div className="flex items-center gap-2.5">
           <Image src="/phia.svg" alt="Phia" width={28} height={28} />
-          <span className="text-base font-semibold text-[#3A2D22] tracking-tight">phia</span>
+          <span className="text-base font-semibold text-[#3A2D22] tracking-tight">
+            phia
+          </span>
         </div>
-        <Link href="/phia" className="text-xs text-[#9C8B7A] hover:text-[#5A4A3A] transition-colors">
+        <Link
+          href="/phia"
+          className="text-xs text-[#9C8B7A] hover:text-[#5A4A3A] transition-colors"
+        >
           Skip for now →
         </Link>
       </div>
@@ -1092,10 +1753,12 @@ export default function OnboardingPage() {
       {/* Content */}
       <div className="mx-auto max-w-2xl px-6 pb-24 pt-10">
         <div className="mb-8 space-y-1.5">
-          <h1 className="text-2xl font-semibold text-[#2A1F15] tracking-tight">Set up your style profile</h1>
+          <h1 className="text-2xl font-semibold text-[#2A1F15] tracking-tight">
+            Set up your style profile
+          </h1>
           <p className="text-sm text-[#7A6A5A] leading-relaxed">
-            Help Phia understand you — upload photos or fill in your preferences manually.
-            You can always update this later.
+            Help Phia understand you — upload photos or fill in your preferences
+            manually. You can always update this later.
           </p>
         </div>
 
@@ -1110,50 +1773,103 @@ export default function OnboardingPage() {
                 ${activeTab === tab ? "bg-white text-[#3A2D22] shadow-sm" : "text-[#9C8B7A] hover:text-[#5A4A3A]"}`}
             >
               {tab === "ai" ? (
-                <><RiSparklingLine className="size-4" /> Upload Photos</>
+                <>
+                  <RiSparklingLine className="size-4" /> Upload Photos
+                </>
               ) : (
-                <><RiBodyScanLine className="size-4" /> Preferences</>
+                <>
+                  <RiBodyScanLine className="size-4" /> Preferences
+                </>
               )}
             </button>
           ))}
         </div>
 
         {/* Tab content */}
-        <div className="rounded-3xl border border-[#E8DDD0] bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[#E8DDD0] bg-white p-6 shadow-sm mb-10">
           {activeTab === "ai" ? (
-            <AIUploadTab files={files} onAdd={handleAdd} onRemove={handleRemove} />
+            <AIUploadTab
+              files={files}
+              onAdd={handleAdd}
+              onRemove={handleRemove}
+            />
           ) : (
             <ManualSetupTab state={manualState} setters={manualSetters} />
           )}
         </div>
       </div>
 
+      {/* Voice agent — tap to unlock audio */}
+      {!audioUnlocked && (
+        <button
+          type="button"
+          onClick={unlockAudio}
+          className="fixed bottom-24 right-6 z-20 flex items-center gap-2 rounded-full bg-[#3A2D22] px-4 py-2.5 shadow-lg animate-pulse cursor-pointer"
+        >
+          <span className="text-xs font-medium text-[#F5EFE6]">
+            🔊 Tap to hear Phia
+          </span>
+        </button>
+      )}
+      {agentSpeaking && audioUnlocked && (
+        <div className="fixed bottom-24 right-6 z-20">
+          <div className="flex items-center gap-2 rounded-full bg-[#3A2D22] px-4 py-2 shadow-lg">
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-xs font-medium text-[#F5EFE6]">
+              Phia is speaking…
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Sticky CTA */}
-      <div className="fixed bottom-0 inset-x-0 z-10 border-t border-[#E8DDD0] bg-[#FAF7F2]/90 backdrop-blur-md px-6 py-4">
-        <div className="mx-auto max-w-2xl flex items-center justify-between gap-4">
-          <p className="text-xs text-[#9C8B7A]">
-            Your data is private and only used to personalise your experience.
-          </p>
+      <div className="fixed bottom-0 inset-x-0 z-10 border-t border-[#E8DDD0] bg-[#FAF7F2]/90 backdrop-blur-md px-6 py-3">
+        <div className="mx-auto max-w-2xl flex flex-col items-center gap-1">
           <button
             type="button"
             onClick={handleSave}
             disabled={processingNext}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-[#3A2D22] px-5 py-2.5 text-sm font-medium text-[#F5EFE6] hover:bg-[#2A1F15] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3A2D22] px-6 py-3.5 text-[15px] font-semibold text-[#F5EFE6] hover:bg-[#2A1F15] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {processingNext ? (
               <>
-                <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                <svg
+                  className="size-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
                 </svg>
                 Processing…
               </>
             ) : activeTab === "ai" ? (
-              <>Next <RiArrowRightLine className="size-4" /></>
+              <>
+                Next <RiArrowRightLine className="size-4" />
+              </>
             ) : (
-              <>Save & Continue <RiArrowRightLine className="size-4" /></>
+              <>
+                Save & Continue <RiArrowRightLine className="size-4" />
+              </>
             )}
           </button>
+          <p className="text-xs text-[#9C8B7A] text-center">
+            Your data is private and only used to personalise your experience.
+          </p>
         </div>
       </div>
     </div>

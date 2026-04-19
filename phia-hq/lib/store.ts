@@ -18,6 +18,8 @@ export type UserPreferences = {
   textures: string[];
   brands: string[];
   styleVibes: string[];
+  patternsToAvoid: string[];
+  celebrities: string[];
 
   // Meta
   completedAt: string | null;
@@ -43,6 +45,8 @@ const defaultPreferences: UserPreferences = {
   textures: [],
   brands: [],
   styleVibes: [],
+  patternsToAvoid: [],
+  celebrities: [],
   completedAt: null,
   setupMode: null,
 };
@@ -72,6 +76,34 @@ export const useProfileStore = create<ProfileStore>()(
     }),
     {
       name: "phia-profile",
+    }
+  )
+);
+
+// ─── Try-On cache (persisted) ─────────────────────────────────────────────────
+
+type TryOnResult = { label: string; src: string };
+
+type TryOnCacheStore = {
+  cache: Record<string, TryOnResult[]>;
+  saveTryOn: (productKey: string, results: TryOnResult[]) => void;
+  getTryOn: (productKey: string) => TryOnResult[];
+};
+
+export const useTryOnCacheStore = create<TryOnCacheStore>()(
+  persist(
+    (set, get) => ({
+      cache: {},
+
+      saveTryOn: (productKey, results) =>
+        set((state) => ({
+          cache: { ...state.cache, [productKey]: results },
+        })),
+
+      getTryOn: (productKey) => get().cache[productKey] ?? [],
+    }),
+    {
+      name: "phia-tryon-cache",
     }
   )
 );

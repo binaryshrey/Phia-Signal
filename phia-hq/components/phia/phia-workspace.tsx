@@ -21,6 +21,7 @@ import {
   RiBookmarkLine,
   RiCake2Line,
   RiCloseCircleLine,
+  RiCloseLine,
   RiDiamondLine,
   RiEyeOffLine,
   RiEyeLine,
@@ -45,9 +46,10 @@ import {
   RiSmartphoneFill,
   RiUser4Line,
 } from "@remixicon/react";
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { ReviewsFeed } from "@/components/phia/reviews-feed";
 import { Button } from "@/components/ui/button";
 import brandsData from "@/db/brands.json";
 import curatedData from "@/db/curated.json";
@@ -70,7 +72,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { useProfileStore, type UserPreferences } from "@/lib/store";
+import { useProfileStore, useTryOnCacheStore, type UserPreferences } from "@/lib/store";
+import { useSharedCartStore } from "@/lib/shared-cart";
 
 type ViewState = {
   x: number;
@@ -423,10 +426,189 @@ const AGENT_DEFS = [
 
 function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean }) {
   const prefs = useProfileStore((s) => s.preferences);
+  const savePreferences = useProfileStore((s) => s.savePreferences);
   const sizingLabels: string[] = [];
   if (prefs.clothingSize) sizingLabels.push(prefs.clothingSize);
   if (prefs.pantSize) sizingLabels.push(`${prefs.pantSize}"`);
   if (prefs.shoeSize) sizingLabels.push(`US ${prefs.shoeSize}`);
+
+  // Sizing Agent voice
+  const [sizingActive, setSizingActive] = useState(false);
+  const [sizingStatus, setSizingStatus] = useState("");
+  const sizingWsRef = useRef<WebSocket | null>(null);
+  const sizingAudioCtxRef = useRef<AudioContext | null>(null);
+  const sizingNextPlayRef = useRef(0);
+  const sizingSampleRateRef = useRef(16000);
+  const sizingTranscriptRef = useRef<string[]>([]);
+  const sizingMicStreamRef = useRef<MediaStream | null>(null);
+  const sizingProcessorRef = useRef<ScriptProcessorNode | null>(null);
+
+  const playSizingChunk = useCallback((base64: string) => {
+    const ctx = sizingAudioCtxRef.current;
+    if (!ctx || ctx.state !== "running") return;
+    const raw = atob(base64);
+    const pcm16 = new Int16Array(raw.length / 2);
+    for (let i = 0; i < pcm16.length; i++) {
+      pcm16[i] = raw.charCodeAt(i * 2) | (raw.charCodeAt(i * 2 + 1) << 8);
+    }
+    const float32 = new Float32Array(pcm16.length);
+    for (let i = 0; i < pcm16.length; i++) {
+      float32[i] = pcm16[i] / 32768;
+    }
+    const buffer = ctx.createBuffer(1, float32.length, sizingSampleRateRef.current);
+    buffer.copyToChannel(float32, 0);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    const t = Math.max(ctx.currentTime, sizingNextPlayRef.current);
+    source.start(t);
+    sizingNextPlayRef.current = t + buffer.duration;
+  }, []);
+
+  const analyzeSizingTranscript = useCallback(() => {
+    const transcript = sizingTranscriptRef.current.join(" ").toLowerCase();
+    const clothingSizes = ["xxxl", "xxl", "xl", "l", "m", "s", "xs"];
+    const pantSizes = ["40", "38", "36", "34", "32", "30", "28", "26"];
+    const shoeSizes = ["13", "12", "11", "10.5", "10", "9.5", "9", "8.5", "8", "7.5", "7", "6"];
+
+    const updates: Partial<typeof prefs> = {};
+    for (const s of clothingSizes) {
+      if (transcript.includes(`size ${s}`) || transcript.includes(`clothing ${s}`) || transcript.includes(`dress ${s}`) || new RegExp(`\\b${s}\\b`).test(transcript)) {
+        updates.clothingSize = s.toUpperCase();
+        break;
+      }
+    }
+    for (const s of pantSizes) {
+      if (transcript.includes(`pant ${s}`) || transcript.includes(`waist ${s}`) || transcript.includes(`${s} inch`) || transcript.includes(`${s}"`)) {
+        updates.pantSize = s;
+        break;
+      }
+    }
+    for (const s of shoeSizes) {
+      if (transcript.includes(`shoe ${s}`) || transcript.includes(`shoe size ${s}`) || transcript.includes(`us ${s}`)) {
+        updates.shoeSize = s;
+        break;
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      savePreferences(updates);
+    }
+  }, [prefs, savePreferences]);
+
+  const stopSizingAgent = useCallback(() => {
+    analyzeSizingTranscript();
+    sizingWsRef.current?.close();
+    sizingWsRef.current = null;
+    sizingMicStreamRef.current?.getTracks().forEach((t) => t.stop());
+    sizingMicStreamRef.current = null;
+    sizingProcessorRef.current?.disconnect();
+    sizingProcessorRef.current = null;
+    sizingAudioCtxRef.current?.close();
+    sizingAudioCtxRef.current = null;
+    setSizingActive(false);
+    setSizingStatus("");
+  }, [analyzeSizingTranscript]);
+
+  const startSizingAgent = useCallback(async () => {
+    const agentId = "agent_8001kpjzvmdjega936zzghqhc9qe";
+    setSizingActive(true);
+    setSizingStatus("Connecting...");
+    sizingTranscriptRef.current = [];
+
+    try {
+      // Get mic
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      sizingMicStreamRef.current = stream;
+
+      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      await audioCtx.resume();
+      sizingAudioCtxRef.current = audioCtx;
+      sizingNextPlayRef.current = audioCtx.currentTime;
+
+      // Mic capture → PCM base64
+      const micSource = audioCtx.createMediaStreamSource(stream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      sizingProcessorRef.current = processor;
+
+      const ws = new WebSocket(`wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`);
+      sizingWsRef.current = ws;
+
+      let initialized = false;
+
+      processor.onaudioprocess = (e) => {
+        if (!initialized || ws.readyState !== WebSocket.OPEN) return;
+        const input = e.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(input.length);
+        for (let i = 0; i < input.length; i++) {
+          pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[i] * 32768)));
+        }
+        const bytes = new Uint8Array(pcm16.buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        ws.send(JSON.stringify({ user_audio_chunk: btoa(binary) }));
+      };
+
+      micSource.connect(processor);
+      processor.connect(audioCtx.destination);
+
+      ws.onopen = () => setSizingStatus("Listening...");
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          switch (msg.type) {
+            case "conversation_initiation_metadata": {
+              initialized = true;
+              const fmt = String(msg.conversation_initiation_metadata_event?.agent_output_audio_format ?? "");
+              const m = fmt.match(/pcm_(\d+)/i);
+              if (m?.[1]) sizingSampleRateRef.current = Number(m[1]);
+              setSizingStatus("Speak your sizing...");
+              break;
+            }
+            case "audio":
+              if (msg.audio_event?.audio_base_64) {
+                setSizingStatus("Agent speaking...");
+                playSizingChunk(msg.audio_event.audio_base_64);
+              }
+              break;
+            case "user_transcript":
+              if (msg.user_transcription_event?.user_transcript) {
+                sizingTranscriptRef.current.push(msg.user_transcription_event.user_transcript);
+                setSizingStatus(`You: "${msg.user_transcription_event.user_transcript}"`);
+              }
+              break;
+            case "agent_response":
+              if (msg.agent_response_event?.agent_response) {
+                setSizingStatus("Agent speaking...");
+              }
+              break;
+            case "ping":
+              ws.send(JSON.stringify({ type: "pong", event_id: msg.ping_event?.event_id }));
+              break;
+          }
+        } catch { /* skip */ }
+      };
+
+      ws.onclose = () => {
+        if (sizingActive) stopSizingAgent();
+      };
+      ws.onerror = () => stopSizingAgent();
+    } catch (err) {
+      console.error("Sizing agent error:", err);
+      setSizingActive(false);
+      setSizingStatus("");
+    }
+  }, [playSizingChunk, sizingActive, stopSizingAgent]);
+
+  const toggleSizingAgent = useCallback(() => {
+    if (sizingActive) {
+      stopSizingAgent();
+    } else {
+      startSizingAgent();
+    }
+  }, [sizingActive, stopSizingAgent, startSizingAgent]);
 
   const svgW = 900;
   const svgH = 700;
@@ -492,7 +674,8 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
       </div>
 
       <DraggableAgentCard defaultX={AGENT_DEFS[0].x} defaultY={AGENT_DEFS[0].y}>
-        <div className="w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+        <div className="relative w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <img src="/Rectangle.svg" alt="" className="absolute top-2 right-2 h-[2.2em] pointer-events-none" />
           <div className="flex items-center gap-2 mb-2.5">
             <div className="flex size-6 items-center justify-center rounded-lg bg-[#8B6914]/20">
               <RiSparklingLine className="size-3.5 text-[#C9A84C]" />
@@ -513,7 +696,8 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
       </DraggableAgentCard>
 
       <DraggableAgentCard defaultX={AGENT_DEFS[1].x} defaultY={AGENT_DEFS[1].y}>
-        <div className="w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+        <div className="relative w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <img src="/Rectangle1.svg" alt="" className="absolute top-2 right-2 h-[2.2em] pointer-events-none" />
           <div className="flex items-center gap-2 mb-2.5">
             <div className="flex size-6 items-center justify-center rounded-lg bg-indigo-500/20">
               <RiSearchLine className="size-3.5 text-indigo-400" />
@@ -533,7 +717,8 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
       </DraggableAgentCard>
 
       <DraggableAgentCard defaultX={AGENT_DEFS[2].x} defaultY={AGENT_DEFS[2].y}>
-        <div className="w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+        <div className="relative w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <img src="/k_pop_guru.svg" alt="" className="absolute top-2 right-2 h-[2.2em] pointer-events-none" />
           <div className="flex items-center gap-2 mb-2.5">
             <div className="flex size-6 items-center justify-center rounded-lg bg-emerald-500/20">
               <RiShirtLine className="size-3.5 text-emerald-400" />
@@ -555,7 +740,26 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
       </DraggableAgentCard>
 
       <DraggableAgentCard defaultX={AGENT_DEFS[3].x} defaultY={AGENT_DEFS[3].y}>
-        <div className="w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+        <div className={cn(
+          "relative w-[200px] rounded-2xl border bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]",
+          sizingActive ? "border-amber-500/40" : "border-white/10",
+        )}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleSizingAgent(); }}
+            className="absolute top-2 right-2 z-10 cursor-pointer"
+          >
+            {sizingActive ? (
+              <div className="flex size-[2.2em] items-center justify-center rounded-lg bg-amber-500/30">
+                <svg viewBox="0 0 24 24" className="size-4 text-amber-400" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              </div>
+            ) : (
+              <img src="/yoga.svg" alt="Start sizing agent" className="h-[2.2em]" />
+            )}
+          </button>
           <div className="flex items-center gap-2 mb-2.5">
             <div className="flex size-6 items-center justify-center rounded-lg bg-amber-500/20">
               <RiBodyScanLine className="size-3.5 text-amber-400" />
@@ -564,8 +768,10 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-[9px]">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-white/40">Body analysis active</span>
+              <span className={cn("size-1.5 rounded-full", sizingActive ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse")} />
+              <span className="text-white/40 truncate max-w-[150px]">
+                {sizingActive ? sizingStatus || "Connecting..." : "Body analysis active"}
+              </span>
             </div>
             <div className="flex flex-wrap gap-1">
               {sizingLabels.length > 0 ? sizingLabels.map((label) => (
@@ -605,7 +811,8 @@ function AgentNodes({ showFeedbackAgent = false }: { showFeedbackAgent?: boolean
           </svg>
 
           <DraggableAgentCard defaultX={460} defaultY={200}>
-            <div className="w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="relative w-[200px] rounded-2xl border border-white/10 bg-[#1a1a22]/80 backdrop-blur-md p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)] animate-in fade-in slide-in-from-left-4 duration-500">
+              <img src="/social.svg" alt="" className="absolute top-2 right-2 h-[2.2em] pointer-events-none" />
               <div className="flex items-center gap-2 mb-2.5">
                 <div className="flex size-6 items-center justify-center rounded-lg bg-yellow-500/20">
                   <RiNotification2Fill className="size-3.5 text-yellow-400" />
@@ -662,58 +869,87 @@ function ProductDetailOverlay({
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnLoading, setTryOnLoading] = useState(false);
   const [tryOnError, setTryOnError] = useState<string | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const price = product.details.find((r) => r.label === "Price")?.value ?? null;
 
-  // Use only full-body onboarding uploads for virtual try-on.
-  const fullBodyImageUrls = userPhotos.photos?.["full-body"] ?? [];
-  const hasTryOnImage = tryOnImage !== null;
-  const hasFullBodyPhoto = fullBodyImageUrls.length > 0;
+  // Celebrity try-on with persistence
+  const selectedCelebs = userPhotos.celebrities ?? [];
+  const celebList = selectedCelebs.length > 0 ? selectedCelebs : Object.keys(CELEB_DATA);
+  const productKey = product.imageUrl;
+  const { saveTryOn, getTryOn } = useTryOnCacheStore();
+  const cachedResults = getTryOn(productKey);
+  const [tryOnResults, setTryOnResults] = useState<{ label: string; src: string }[]>(cachedResults);
+  const hasTryOnImage = tryOnResults.length > 0;
+
+  // If cached results exist, mark as loaded
+  useEffect(() => {
+    if (cachedResults.length > 0 && !tryOnImage) {
+      setTryOnImage("loaded");
+      setTryOnResults(cachedResults);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Build carousel images array
   const images: { src: string; label: string }[] = [
     { src: product.imageUrl, label: "Product" },
+    ...tryOnResults,
   ];
-  if (tryOnImage) {
-    images.push({ src: tryOnImage, label: "Try On" });
-  }
 
   const handleTryOn = async () => {
-    if (!hasFullBodyPhoto) return;
     setTryOnLoading(true);
     setTryOnError(null);
 
-    try {
-      const res = await fetch("/api/virtual-tryon", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productImageUrl: product.imageUrl,
-          userImageUrls: fullBodyImageUrls.slice(0, 1),
-        }),
-      });
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Failed" }));
-        setTryOnError(err.error || "Try-on failed");
-        return;
+    // Build person image URLs: user's photo (4.png) + selected celebrities
+    const personEntries: { label: string; personUrl: string }[] = [
+      { label: "Your Try On", personUrl: `${origin}/celebrities/tryon/4.png` },
+      ...celebList.map((id) => ({
+        label: CELEB_DATA[id]?.name ?? id,
+        personUrl: `${origin}/celebrities/tryon/${id}.png`,
+      })),
+    ];
+
+    const results: { label: string; src: string }[] = [];
+
+    // Call VTO API for each person in parallel
+    const promises = personEntries.map(async (entry) => {
+      try {
+        const res = await fetch("/api/virtual-tryon", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productImageUrl: product.imageUrl,
+            userImageUrls: [entry.personUrl],
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tryOn) {
+            results.push({ label: entry.label, src: data.tryOn });
+          }
+        }
+      } catch {
+        // Skip failed try-ons
       }
+    });
 
-      const data = await res.json();
-      setTryOnImage(data.tryOn ?? null);
+    await Promise.allSettled(promises);
 
-      // Auto-scroll to try-on image
-      if (data.tryOn) {
-        setTimeout(() => {
-          scrollToSlide(1);
-        }, 100);
-      }
-    } catch {
-      setTryOnError("Something went wrong");
-    } finally {
-      setTryOnLoading(false);
+    if (results.length > 0) {
+      setTryOnResults(results);
+      saveTryOn(productKey, results);
+      setTryOnImage("loaded");
+      setTimeout(() => scrollToSlide(1), 100);
+    } else {
+      setTryOnError("Try-on generation failed");
     }
+
+    setTryOnLoading(false);
   };
 
   const scrollToSlide = (index: number) => {
@@ -747,7 +983,11 @@ function ProductDetailOverlay({
             className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
             {images.map((img, i) => (
-              <div key={i} className="w-full shrink-0 snap-center">
+              <div
+                key={i}
+                className="w-full shrink-0 snap-center cursor-zoom-in"
+                onClick={() => setEnlargedImage(img.src)}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={img.src}
@@ -846,6 +1086,55 @@ function ProductDetailOverlay({
           </div>
         )}
 
+        {/* Sizing — show shoe size for footwear, dress size for clothing */}
+        {(() => {
+          const n = product.name.toLowerCase();
+          const isShoe = /shoe|sneaker|boot|sandal|loafer|mule|heel|pump|slipper|clog|flat|oxford|espadrille|slide/i.test(n);
+          const isDress = !isShoe;
+
+          if (isShoe) return (
+            <div>
+              <p className="text-[10px] font-semibold text-black/40 uppercase tracking-wider mb-1.5">Shoe Size (US)</p>
+              <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pb-0.5">
+                {["6", "7", "8", "9", "10", "11", "12", "13"].map((s) => {
+                  const isRecommended = userPhotos.shoeSize === s;
+                  return (
+                    <div key={s} className="relative shrink-0">
+                      <div className={cn(
+                        "flex size-9 items-center justify-center rounded-lg text-[11px] font-semibold border transition-all",
+                        isRecommended ? "bg-[#8B6914] border-[#8B6914] text-white shadow-sm" : "bg-white border-black/8 text-black/60",
+                      )}>{s}</div>
+                      {isRecommended && <span className="absolute -top-1.5 -right-1 text-[7px] font-bold text-[#8B6914] bg-[#F5EFE6] rounded px-0.5">REC</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+
+          if (isDress) return (
+            <div>
+              <p className="text-[10px] font-semibold text-black/40 uppercase tracking-wider mb-1.5">Size</p>
+              <div className="flex gap-1.5">
+                {["XS", "S", "M", "L", "XL", "XXL"].map((s) => {
+                  const isRecommended = userPhotos.clothingSize === s;
+                  return (
+                    <div key={s} className="relative">
+                      <div className={cn(
+                        "flex size-9 items-center justify-center rounded-lg text-[11px] font-semibold border transition-all",
+                        isRecommended ? "bg-[#8B6914] border-[#8B6914] text-white shadow-sm" : "bg-white border-black/8 text-black/60",
+                      )}>{s}</div>
+                      {isRecommended && <span className="absolute -top-1.5 -right-1 text-[7px] font-bold text-[#8B6914] bg-[#F5EFE6] rounded px-0.5">REC</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+
+          return null;
+        })()}
+
         {/* Action buttons */}
         <div className="flex gap-2 pt-1">
           <button
@@ -875,7 +1164,7 @@ function ProductDetailOverlay({
           <button
             type="button"
             onClick={handleTryOn}
-            disabled={tryOnLoading || hasTryOnImage || !hasFullBodyPhoto}
+            disabled={tryOnLoading || hasTryOnImage}
             className={cn(
               "flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-all",
               hasTryOnImage
@@ -883,7 +1172,6 @@ function ProductDetailOverlay({
                 : tryOnLoading
                   ? "bg-violet-50 text-violet-400"
                   : "bg-violet-50 text-violet-600 border border-violet-200 hover:bg-violet-100",
-              !hasFullBodyPhoto && "opacity-40 cursor-not-allowed",
             )}
           >
             {tryOnLoading ? (
@@ -952,6 +1240,117 @@ function ProductDetailOverlay({
         )}
       </div>
 
+      {/* Enlarged image viewer */}
+      {enlargedImage && (
+        <div
+          className="absolute inset-0 z-[70] flex items-center justify-center bg-black/90 cursor-zoom-out"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setEnlargedImage(null)}
+            className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/15 text-white/80 hover:bg-white/25"
+          >
+            <RiCloseLine className="size-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={enlargedImage}
+            alt={product.name}
+            className="max-w-[95%] max-h-[90%] object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Celebrity Watchlist Slider ───────────────────────────────────────────────
+
+const CELEB_DATA: Record<string, { name: string; image: string }> = {
+  "jasmine-tookes": { name: "Jasmine Tookes", image: "/celebrities/jasmine-tookes.jpg" },
+  "paris-hilton": { name: "Paris Hilton", image: "/celebrities/paris-hilton.jpg" },
+  "toni-breidinger": { name: "Toni Breidinger", image: "/celebrities/toni-breidinger.jpg" },
+  "zara-larsson": { name: "Zara Larsson", image: "/celebrities/zara-larsson.jpg" },
+  "mckenna-grace": { name: "McKenna Grace", image: "/celebrities/mckenna-grace.jpg" },
+  "hanna-goefft": { name: "Hanna Goefft", image: "/celebrities/hanna-goefft.jpg" },
+  "zendaya": { name: "Zendaya", image: "/celebrities/zendaya.jpg" },
+  "chloe-shih": { name: "Chloe Shih", image: "/celebrities/chloe-shih.jpg" },
+};
+
+function CelebrityWatchlist({ celebrities }: { celebrities: string[] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const celebs = celebrities
+    .map((id) => CELEB_DATA[id] ? { id, ...CELEB_DATA[id] } : null)
+    .filter((c): c is { id: string; name: string; image: string } => c !== null);
+
+  if (celebs.length === 0) return null;
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const slideWidth = el.clientWidth;
+    const index = Math.round(el.scrollLeft / slideWidth);
+    setActiveIndex(Math.max(0, Math.min(index, celebs.length - 1)));
+  };
+
+  return (
+    <div className="mb-5 mt-4">
+      <h2
+        className={cn(
+          bodoniModa.className,
+          "text-[16px] leading-[1.05] tracking-[-0.02em] text-black mb-3",
+        )}
+      >
+        Celebrity Watchlist
+      </h2>
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="overflow-x-auto snap-x snap-mandatory rounded-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="flex w-max">
+          {celebs.map((c) => (
+            <div
+              key={c.id}
+              className="relative w-[calc(100vw-100px)] max-w-[280px] shrink-0 snap-center aspect-[4/5] overflow-hidden rounded-2xl"
+              style={{ marginRight: celebs.length > 1 ? "8px" : 0 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={c.image}
+                alt={c.name}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-3">
+                <p className="text-[14px] font-semibold text-white drop-shadow-sm">
+                  {c.name}
+                </p>
+                <p className="text-[10px] text-white/70 italic">Closet Finds</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dots */}
+      {celebs.length > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2.5">
+          {celebs.map((c, i) => (
+            <span
+              key={c.id}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-200",
+                i === activeIndex ? "w-4 bg-black/60" : "w-1.5 bg-black/15",
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1114,15 +1513,24 @@ function ExplorePreviewScreen({
   const phoneScrollRef = useRef<HTMLDivElement>(null);
   const [shareToast, setShareToast] = useState<string | null>(null);
 
+  const [showSharePanel, setShowSharePanel] = useState(false);
+
   const handleShare = () => {
-    const shareId = Math.random().toString(36).slice(2, 10);
-    const shareUrl = `https://phia.style/s/${shareId}`;
+    setShowSharePanel((v) => !v);
+    onShareTriggered?.();
+  };
+
+  const handleCopyLink = () => {
+    const uid = Math.random().toString(36).slice(2, 10);
+    const shareUrl = `${window.location.origin}/cart/${uid}`;
+    // Publish cart to shared store
+    useSharedCartStore.getState().publishCart(uid, cartItems);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl).catch(() => {});
     }
     setShareToast(shareUrl);
     setTimeout(() => setShareToast(null), 4000);
-    onShareTriggered?.();
+    setShowSharePanel(false);
   };
 
   return (
@@ -1249,6 +1657,55 @@ function ExplorePreviewScreen({
                 <RiShare2Line className="size-4" />
               </button>
             </div>
+
+            {/* Share panel */}
+            {showSharePanel && (
+              <div className="mt-2 flex items-center justify-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-full bg-black/5">
+                    <RiLink className="size-4 text-black/60" />
+                  </div>
+                  <span className="text-[8px] font-medium text-black/50">Copy Link</span>
+                </button>
+                <a
+                  href="https://apps.apple.com/app/messages/id1146560473"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-full bg-green-500/10">
+                    <svg viewBox="0 0 24 24" className="size-4 text-green-600" fill="currentColor"><path d="M12 2C6.477 2 2 5.935 2 10.715c0 2.87 1.505 5.43 3.867 7.09-.1.88-.58 3.28-.665 3.744 0 0-.014.112.058.155.072.044.157.02.157.02.22-.03 2.555-1.662 3.613-2.427.95.267 1.96.418 3.01.418 5.522 0 9.96-3.935 9.96-8.715C22 5.935 17.523 2 12 2z"/></svg>
+                  </div>
+                  <span className="text-[8px] font-medium text-black/50">iMessage</span>
+                </a>
+                <a
+                  href="https://apps.apple.com/app/telegram-messenger/id686449807"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-full bg-blue-500/10">
+                    <svg viewBox="0 0 24 24" className="size-4 text-blue-500" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.63 3.72-.53.37-1.01.55-1.44.54-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.65-2.89 7.99-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.53.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>
+                  </div>
+                  <span className="text-[8px] font-medium text-black/50">Telegram</span>
+                </a>
+                <a
+                  href="https://apps.apple.com/app/gmail-email-by-google/id422689480"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div className="flex size-10 items-center justify-center rounded-full bg-red-500/10">
+                    <svg viewBox="0 0 24 24" className="size-4 text-red-500" fill="currentColor"><path d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20v12zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+                  </div>
+                  <span className="text-[8px] font-medium text-black/50">Gmail</span>
+                </a>
+              </div>
+            )}
 
             <div className="mt-2.5 rounded-full bg-[#E7E7E7] p-0.5">
               {(["Bag", "Reviews"] as CartMode[]).map((mode) => (
@@ -1384,29 +1841,40 @@ function ExplorePreviewScreen({
             {activeCartMode === "Bag" ? (
               cartItems.length > 0 ? (
                 <div className="mt-3 columns-2 gap-2 [column-fill:_balance]">
-                  {cartItems.map((item) => (
-                    <article
-                      key={`${item.id}-cart-item`}
-                      className="mb-2 break-inside-avoid rounded-xl bg-white p-0.75 cursor-pointer"
-                      onClick={() => openProduct(item)}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        loading="lazy"
-                        className="h-auto w-full rounded-[12px]"
-                      />
-                      <div className="px-1.5 pb-1.5 pt-1">
-                        <p className="text-[9px] font-semibold leading-tight text-black">
-                          {item.name}
-                        </p>
-                        <p className="mt-0.5 text-[9px] text-black/65">
-                          {item.brand || "Phia"}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
+                  {cartItems.map((item) => {
+                    const cachedTryOn = useTryOnCacheStore.getState().cache[item.imageUrl];
+                    const tryOnThumb = cachedTryOn?.[0]?.src;
+                    return (
+                      <article
+                        key={`${item.id}-cart-item`}
+                        className="mb-2 break-inside-avoid rounded-xl bg-white p-0.75 cursor-pointer"
+                        onClick={() => openProduct(item)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          loading="lazy"
+                          className="h-auto w-full rounded-[12px]"
+                        />
+                        {tryOnThumb && (
+                          <div className="flex gap-1 px-1 pt-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={tryOnThumb} alt="Try on" className="size-8 rounded-md object-cover border border-black/5" />
+                            <span className="text-[8px] text-black/30 self-center">Try-on</span>
+                          </div>
+                        )}
+                        <div className="px-1.5 pb-1.5 pt-1">
+                          <p className="text-[9px] font-semibold leading-tight text-black">
+                            {item.name}
+                          </p>
+                          <p className="mt-0.5 text-[9px] text-black/65">
+                            {item.brand || "Phia"}
+                          </p>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="mt-3 flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-black/50">
@@ -1414,9 +1882,11 @@ function ExplorePreviewScreen({
                 </div>
               )
             ) : (
-              <div className="mt-3 flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-black/50">
-                No reviews yet.
-              </div>
+              <ReviewsFeed
+                items={cartItems}
+                onRemove={(id) => setCartItems((prev) => prev.filter((i) => i.id !== id))}
+                tryOnCache={useTryOnCacheStore.getState().cache}
+              />
             )}
           </div>
         ) : activeBottomNav === "saved" ? (
@@ -2218,7 +2688,18 @@ function ExplorePreviewScreen({
               </div>
             )}
           </div>
-        ) : tabItems.length > 0 ? (
+        ) : (
+          <div>
+            {/* Celebrity Watchlist */}
+            <div className="mb-4">
+              <CelebrityWatchlist celebrities={
+                preferences.celebrities?.length > 0
+                  ? preferences.celebrities
+                  : Object.keys(CELEB_DATA)
+              } />
+            </div>
+
+            {tabItems.length > 0 ? (
           <div className="columns-2 gap-2 [column-fill:_balance]">
             {tabItems.map((item) => (
               <article
@@ -2244,9 +2725,11 @@ function ExplorePreviewScreen({
               </article>
             ))}
           </div>
-        ) : (
-          <div className="flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-black/50">
-            No content in this tab yet.
+            ) : (
+              <div className="flex h-40 items-center justify-center rounded-2xl bg-white text-sm text-black/50">
+                No content in this tab yet.
+              </div>
+            )}
           </div>
         )}
       </div>
