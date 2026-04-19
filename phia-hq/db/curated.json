@@ -1,0 +1,97 @@
+{
+  "data": {
+    "curatedTypes": [
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhy0fv000kl204p5dnp2wa",
+        "name": "Night Out",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/0336e29acbc63344f4a15c0ea55052a87d79c75c35d2795b56b875caa7e7682a.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhvio1000hl204s9wkg98v",
+        "name": "Wedding Guest",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/c869b930fe1183193a6adc56b4a860e3f52c7b2851347862fbb038eb00634fd5.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhr51c000gl204mt20crnt",
+        "name": "Travel",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/f9ec66c400bfe7078aa3e0ca320945259aa69afe173dba230c3546de8994f9df.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhpm4y000fl204mkzak4z3",
+        "name": "Holiday",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/ae91fe14c8166dfd607d87d4c1ab1e5ed3a4767baa52746b903dfa2627d339db.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhiaqg000bju04fkr05qtm",
+        "name": "Birthday",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/904ffaa9d58c0fc36a90c46347628a24743a5ab36e7bf2cdb5e7006fc3efc9f1.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyhdg6u000aju0406pboojy",
+        "name": "Concert",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/b60ac0340409da5e846d07f2c9600a96faa02caa4f241834bc2e4d9d6b09523d.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyh5uke000cl20486l4wqzf",
+        "name": "Work",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/b2fc27dcaaae61cb21fb3d889299727601d2618e5451c9443384503606c92471.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkygyshi0009l204llaofort",
+        "name": " Errands",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/60c4de6e7bef99db9039dacfa9e3c748f6ee7f21dc30be72e37b981127ae9792.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkygi0y40002l204qcuzximi",
+        "name": "At Home",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/cac16f12a54f19751052ed19ceb5c7af58ab932ec83088e7e47118e6da0ccc39.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkyfwdsu0000jp04aejn3pz0",
+        "name": "Active",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/8a55ef7b29601d1692127322a1a313ab208ffdc3e8b782470c81e57b9272479d.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkrh50ym0000ky04pcx1dw5p",
+        "name": "Spring Break",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/714288b23f7877461a5bc3fc2579a1479ae9c21924850254ffa61b9162c334b6.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkrgzl6f0000l504nbvkvk3q",
+        "name": "Ski",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/bc689eb670c7ce34ea360631f37489e340a736fc16553d9c30087a58611482d3.jpg",
+        "level": null
+      },
+      {
+        "__typename": "CuratedType",
+        "typeId": "cmkrg2qd00000ib04cqbh07x0",
+        "name": "Winter",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/curated-types/df8486f89a4c9bdc0378550aa1de27f3708dcd390b03dcdcc53a0a8ff9a1be74.jpg",
+        "level": null
+      }
+    ]
+  }
+}

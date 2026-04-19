@@ -1,0 +1,177 @@
+{
+  "data": {
+    "popularSearches": [
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": false,
+        "rank": "1",
+        "category": "Hair",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/9538bfa8af0c5f5b3e0b5390167bad53cd00e9d3caadbc8fc6cf48cb48c7f47b.png",
+        "query": "T3 Micro Curling Straightener"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "2",
+        "category": "Beauty",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/7f6bd7787b0564a6f7bb48806505399ca76320231f05f795204d89ff25506001.png",
+        "query": "Belk Clinique Even Better™ Makeup Broad Spectrum SPF 15 Foundation"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "3",
+        "category": "",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/0a12625cfdc073f23f83181efd571a2f577cb3e3ada25846d05f09e9da9d1f95.png",
+        "query": "Carl Friedrik The Carry-on X"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "4",
+        "category": "Beauty",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/c610b9225ec4f7e9c9174170b0932b957d3a7d6e08b7996b77918a5256aec7d9.png",
+        "query": "ERLY Daily Dew Illuminating Serum"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "5",
+        "category": "",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/edf54adc785f3f0de2c15144416d5ed2846ad1596f73b3c3cb4d61ac8fe1b32a.png",
+        "query": "Veronica Beard Miller Dickey Jacket"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": false,
+        "isTrending": false,
+        "rank": "6",
+        "category": "Sneakers",
+        "imgUrl": "https://phia.com/mobile/almost-finished/aloha.jpg",
+        "query": "Tb.490 Rife Shimmer Silver Sneakers"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "6",
+        "category": "Тор",
+        "imgUrl": "https://withjean.com/cdn/shop/files/rose-top-red-with-jean-03.jpg?v=1748466979&width=1024",
+        "query": "Jean Rose Top"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "8",
+        "category": "Dress",
+        "imgUrl": "https://media.thereformation.com/image/upload/f_auto,q_auto,dpr_1.0/w_800,c_scale//PRD-SFCC/1315343/BLACK/1315343.1.BLACK?_s=RAABAB0",
+        "query": "Reformation Linen Dress"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "9",
+        "category": "Jeans",
+        "imgUrl": "https://www.net-a-porter.com/variants/images/1647597350117490/in/w2000_q60.jpg",
+        "query": "Frame Dark Denim Jeans"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "10",
+        "category": "Bag",
+        "imgUrl": "https://coach.scene7.com/is/image/Coach/cu068_b4t7j_a0?$mobileProductV3$",
+        "query": "Coach Brooklyn Bag"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "11",
+        "category": "Dress",
+        "imgUrl": "https://cdn.shopify.com/s/files/1/1191/9918/files/ANAIS_1_390x_crop_center.jpg.webp?v=1716322897",
+        "query": "Rat and Boa Dress"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "12",
+        "category": "Bracelet",
+        "imgUrl": "https://media.davidyurman.com/productsv2/B11278/B11278-S8/B11278-S8.jpg",
+        "query": "David Yurman Bracelet"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": false,
+        "isTrending": true,
+        "rank": "13",
+        "category": "Sweater",
+        "imgUrl": "https://dtcralphlauren.scene7.com/is/image/PoloGSI/s7-1355997_alternate10?$rl_4x5_pdp$",
+        "query": "Ralph Lauren Cable Knit Sweater"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "14",
+        "category": "Sneakers",
+        "imgUrl": "https://static2.goldengoose.com/public/Style/ECOMM/GMF00102.F000311-10270.jpg",
+        "query": "Golden Goose Sneakers"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": false,
+        "isTrending": true,
+        "rank": "15",
+        "category": "Jeans",
+        "imgUrl": "https://www.acnestudios.com/dw/image/v2/AAXV_PRD/on/demandware.static/-/Sites-acne-product-catalog/default/dw98516b74/images/A0/A00520-/2000x/A00520-863_B.jpg?sw=560&sh=840",
+        "query": "Acne Studio Straight Leg-Jeans"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": false,
+        "isTrending": true,
+        "rank": "16",
+        "category": "Outerwear",
+        "imgUrl": "https://images.arcteryx.com/details/1350x1710/S25-X000007082-Beta-AR-Jacket-Black-Front-View.jpg",
+        "query": "Arc'teryx Beta Jacket Men's Jacket"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": false,
+        "isTrending": true,
+        "rank": "17",
+        "category": "Outerwear",
+        "imgUrl": "https://lsco.scene7.com/is/image/lsco/A48200023-dynamic1-pdp?fmt=webp&qlt=70&resMode=sharp2&fit=crop,1&op_usm=0.6,0.6,8&wid=1320&hei=1320",
+        "query": "Levi's Trucker Jacket"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "18",
+        "category": "Fashion",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/018a66592579369d5ab19757dea40eb594904ee6e762979e2b36f853898b24c6.png",
+        "query": "Rhinestone Rib Quarter Socks"
+      },
+      {
+        "__typename": "PopularSearch",
+        "isFemale": true,
+        "isTrending": true,
+        "rank": "19",
+        "category": "Fashion",
+        "imgUrl": "https://cdn.phia.com/editorial-manager/searchs/cd2fde88b4306667c7cf8d9d0ffd7ba1091515efb3823d94fa19feb79e11f51d.png",
+        "query": "M.Gemi Una Flat"
+      }
+    ]
+  }
+}

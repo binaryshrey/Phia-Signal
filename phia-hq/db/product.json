@@ -1,0 +1,34 @@
+{
+  "data": {
+    "resaleInsights": {
+      "__typename": "ResaleInsights",
+      "averageResaleValue": "59.959999084472656",
+      "resaleInsightsQueryId": "cmnvecgzi00axs601tb2mmuj0",
+      "numExactMatches": 0,
+      "exactMatchType": "SimilarityModel",
+      "dealType": "GREAT_DEAL",
+      "convertedPrice": 59.959999084472656,
+      "resaleRatio": 100,
+      "productId": "ENTITY_TYPE_PRODUCT-6e2125f279c7f918",
+      "sellerPlatform": "Nordstrom Rack",
+      "secondhandExactMatchPriceThreshold": 0,
+      "firsthandExactMatchPriceThreshold": 0,
+      "secondhandPriceThreshold": 64,
+      "firsthandPriceThreshold": 117,
+      "priceDifference": 4.040000915527344,
+      "useExactMatchCalculation": false,
+      "topProducts": [],
+      "expensiveBestMatchProducts": [],
+      "sellerInfo": null,
+      "productReviews": null,
+      "enhancedMetadata": null,
+      "scrapedName": "Madewell Floral Long Sleeve Polo Midi Dress in Mossy Umber at Nordstrom Rack, Size Large",
+      "scrapedBrand": "Nordstrom Rack",
+      "scrapedColor": "Mossy Umber",
+      "scrapedPrice": 59.959999084472656,
+      "scrapedImages": [
+        "https://n.nordstrommedia.com/it/7c4579dc-2717-40b8-ba54-b1ac4f469a65.jpeg?w=350"
+      ]
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "items": [
+    {
+      "id": "ENTITY_TYPE_PRODUCT-59139c3aa1d48310",
+      "type": "product",
+      "name": "Oval sunglasses",
+      "brand": "Mango",
+      "price_usd": 39.99,
+      "url": "https://shop.mango.com/ne/en/p/women/sunglasses/oval-sunglasses_87014389?c=32",
+      "image": "https://cdn.phia.com/editorial-manager/products/ffae4b80f31142a84b029b69f9467cb6f335f91d90d1da66b0145e280485d3bf.png",
+      "images": [],
+      "currency": "USD",
+      "in_stock": true,
+      "metadata": {
+        "variant": "PRIMARY",
+        "source": null
+      }
+    },
+    {
+      "id": "ENTITY_TYPE_PRODUCT-3ca107ebbbdba069",
+      "type": "product",
+      "name": "The Modern Trench Coat",
+      "brand": "Everlane",
+      "price_usd": 288,
+      "url": "https://www.everlane.com/products/womens-cotton-modern-trench-coat-new-cornstalk?variant=42243107455062",
+      "image": "https://www.everlane.com/cdn/shop/files/a43286de_8534.jpg?v=1753411690&width=990",
+      "images": [],
+      "currency": "USD",
+      "in_stock": true,
+      "metadata": {
+        "variant": "PRIMARY",
+        "source": null
+      }
+    },
+    {
+      "id": "cmnp2t7gj000rs601oxvcuz7m",
+      "type": "product",
+      "name": "Sleeveless Top",
+      "brand": "Odd Muse",
+      "price_usd": 85,
+      "url": "https://oddmuse.co.uk/products/sleeveless-top-oat",
+      "image": "https://oddmuse.co.uk/cdn/shop/files/ECOM_SLEEVELESS_TOP_OAT_417_779c1cf1-6c09-4d9f-bcc3-062ac6add55e_450x450.jpg?v=1764342069",
+      "images": [],
+      "currency": "USD",
+      "in_stock": true,
+      "metadata": {
+        "variant": "PRIMARY",
+        "source": null
+      }
+    },
+    {
+      "id": "product-265",
+      "type": "product",
+      "name": "Liv Dress | White Lace",
+      "brand": "With Jéan",
+      "price_usd": 139,
+      "url": "https://withjean.com/products/liv-dress-white-lace",
+      "image": "https://withjean.com/cdn/shop/files/liv-dress-white-lace-03_2000x.jpg?v=1734669640",
+      "images": [],
+      "currency": "USD",
+      "in_stock": true,
+      "metadata": {
+        "variant": "PRIMARY",
+        "source": null
+      }
+    },
+    {
+      "id": "nike-air-force-1-07",
+      "type": "product",
+      "name": "Nike Air Force 1 '07",
+      "brand": "Nike",
+      "price_usd": 150,
+      "url": "https://www.nike.com/t/air-force-1-07-mens-shoes-jBrhbr/CW2288-111",
+      "image": "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/b7d9211c-26e7-431a-ac24-b0540fb3c00f/AIR+FORCE+1+%2707.png",
+      "images": [],
+      "currency": "USD",
+      "in_stock": true,
+      "metadata": {
+        "variant": "PRIMARY",
+        "source": "nike"
+      }
+    }
+  ]
+}

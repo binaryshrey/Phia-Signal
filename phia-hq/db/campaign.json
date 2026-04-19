@@ -1,0 +1,51 @@
+{
+  "data": {
+    "activeCampaign": {
+      "__typename": "CampaignType",
+      "id": "8496b32fe8db",
+      "name": "Birkin Giveaway",
+      "isActive": true,
+      "startDate": "2026-03-20T03:59:00.000Z",
+      "endDate": "2026-05-20T03:59:00.000Z",
+      "termsUrl": "https://phia.com/giveaway-terms-and-conditions",
+      "shareMessage": "omg. can we win this $20k birkin? ^^ this app also finds cheaper prices automatically while you shop. can you download the ✨safari extension ✨ so we both get free entires to a birkin giveaway? 👀",
+      "maxClaimsPerCode": 30000,
+      "rewardType": "raffle",
+      "onboarding": {
+        "__typename": "CampaignOnboardingType",
+        "title": "Invite friends, win a Birkin",
+        "subtitle": "Get 1 entry for every friend who installs Phia in Safari",
+        "imageUrl": "https://cdn.phia.com/campaigns/summer-2026/campaignAppImage.png",
+        "ctaLabel": "INVITE",
+        "continueCtaLabel": "Done"
+      },
+      "inApp": {
+        "__typename": "CampaignInAppType",
+        "title": "Invite friends, win a Birkin",
+        "subtitle": "You’ll get 1 entry every time a friend installs the Phia extension in Safari.",
+        "headerImageUrl": "https://cdn.phia.com/campaigns/summer-2026/campaignAppImage.png",
+        "description": "-",
+        "ctaLabel": "Invite friends",
+        "entryCountLabel": "entries",
+        "termsTitle": "Terms & Conditions",
+        "termsSubtitle": "PHIA BIRKIN GIVEAWAY — OFFICIAL RULES NO PURCHASE NECESSARY TO ENTER OR WIN. A PURCHASE OR PAYMENT WILL NOT INCREASE YOUR CHANCES OF WINNING. This promotion is sponsored by Phia Holdings Inc., 228 Park Ave S, PMB 350611, New York, NY 10003 (“Sponsor”). The promotion is open only to legal residents of the fifty (50) United States and the District of Columbia who are at least eighteen (18) years old at the time of entry. Void where prohibited, including in New York, Florida, Rhode Island, and U.S. territories and possessions. Employees, officers, directors, contractors, agents of Sponsor and its affiliates, and their immediate family members or persons living in the same household are not eligible to enter. The promotion begins on March 19 2026 11:59 EST and ends on May 19 2026 11:59 EST (the “Promotion Period”). HOW TO ENTER — REFERRAL METHOD During the Promotion Period, eligible participants may enter by referring new users to the Phia application or extension using their unique referral link or code. Participants will receive one (1) entry for each eligible referral. A referral is considered successful when the referred individual is a new user, downloads the Phia app or extension via the entrant’s unique referral link or code, completes installation, enables required permissions, and such activity is successfully tracked and attributed to the entrant by Sponsor’s systems, as determined in Sponsor’s sole discretion. FREE ALTERNATIVE METHOD OF ENTRY (NO PURCHASE, DOWNLOAD, OR INSTALLATION REQUIRED) No purchase or download of any Phia product is required to enter or win this promotion. As a free and equally valid alternative method of entry, eligible individuals may send an email to marketing@phia.com during the Promotion Period with their full name and email address to receive one (1) entry. This method of entry is completely free and requires no purchase, download, or installation of any product or application. Entries submitted via this email method carry the same odds of winning as referral entries and are subject to the same eligibility requirements, verification procedures, and Official Rules. The free email entry method and the referral entry method are treated as equal for all purposes of this promotion. There is no limit on entries per person; however, all entries are subject to verification. Any attempt to manipulate, abuse, or undermine the legitimate operation of the promotion, including but not limited to self-referrals, creation of multiple or fake accounts, use of bots, scripts, or other automated means, or any coordinated or fraudulent activity, may result in disqualification at Sponsor’s sole discretion. THE PRIZE One (1) winner will receive one (1) Hermès Birkin 35 in brown leather with gold hardware (the “Prize”). The estimated market value of the Prize is $16,000–$20,000 USD based on current market conditions; actual value may vary depending on size, condition, age, and accessories included. The Prize is non-transferable, not redeemable for cash, and may not be substituted except that Sponsor reserves the right to substitute a prize of equal or greater value if the advertised Prize becomes unavailable for any reason. TAXES The Prize constitutes taxable income to the winner. Sponsor will issue an IRS Form 1099-MISC reflecting the full approximate retail value of the Prize and will provide an additional cash payment intended to offset some or all of the winner’s estimated tax liability associated with the Prize (the “Tax Gross-Up”), the amount of which shall be determined by Sponsor in its sole discretion. The winner remains solely responsible for any taxes exceeding the Tax Gross-Up and for compliance with all applicable tax laws. The winner must complete and return a W-9 form prior to receiving the Prize. WINNER SELECTION AND NOTIFICATION One (1) winner will be selected at random from all eligible entries on or about May 19, 2026. Odds of winning depend on the total number of eligible entries received during the Promotion Period. The winner will be notified via email and/or in-app notification and must respond within forty-eight (48) hours of notification. If the selected winner does not respond within the required timeframe, fails to complete required verification, or is otherwise determined to be ineligible, Sponsor may select an alternate winner. The winner may be required to provide government-issued identification, proof of residency, and any required tax documentation as a condition of receiving the Prize. Failure to comply with these requirements may result in disqualification. PRIVACY AND DATA COLLECTION By entering, participants agree that Sponsor may collect and process personal information, including but not limited to email address, user identifiers, referral data, device identifiers, IP address, and timestamps, for purposes of administering the promotion, preventing fraud, and fulfilling the Prize, in accordance with Sponsor’s Privacy Policy. PUBLICITY Except where prohibited by law, acceptance of the Prize constitutes the winner’s consent to Sponsor’s use of the winner’s name, likeness, image, voice, social media handle, and/or entry content for promotional, advertising, and marketing purposes in any media worldwide without additional compensation or notice. RELEASE OF LIABILITY By participating, entrants agree to release and hold harmless Sponsor, its affiliates, and their respective officers, directors, employees, and agents from and against any and all claims, damages, or liabilities arising out of participation in the promotion or acceptance, use, or misuse of the Prize. This promotion is not sponsored, endorsed, administered by, or associated with Instagram, TikTok, LinkedIn, or any other platform. Sponsor reserves the right, in its sole discretion, to disqualify any individual who tampers with the entry process or violates these Official Rules, and to cancel, suspend, or modify the promotion if any fraud, technical failure, or other factor impairs the integrity or proper functioning of the promotion, as determined by Sponsor. GOVERNING LAW All issues and questions concerning the construction, validity, interpretation, and enforceability of these Official Rules, or the rights and obligations of entrants and Sponsor, shall be governed by and construed in accordance with the laws of the State of New York, without regard to conflict of law principles. Any disputes shall be resolved individually, without resort to any form of class action. WINNER LIST For a copy of the winner’s name, send an email to marketing@phia.com within sixty (60) days of the drawing date.",
+        "infoItems": []
+      },
+      "auth": {
+        "__typename": "CampaignAuthType",
+        "headerImageUrl": "https://cdn.phia.com/campaigns/summer-2026/authHeaderImage.png",
+        "ctaLabel": "Test Signup CTA",
+        "title": "Finish your Birkin entry",
+        "subtitle": "Add your email so we can notify you if you win!"
+      },
+      "entryPoints": {
+        "__typename": "CampaignEntryPointsType",
+        "homeChipLabel": "Win a Birkin",
+        "profileBannerTitle": "Win a Birkin!",
+        "profileBannerSubtitle": "Invite friends to enter giveaway",
+        "profileBannerCta": "Invite",
+        "profileBannerImageUrl": "https://cdn.phia.com/campaigns/summer-2026/campaignAppImage.png"
+      }
+    }
+  }
+}
